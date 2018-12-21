@@ -74,6 +74,9 @@ public:
 	int DX9Image::SetSize(int Width, int Height);
 	int DX9Image::SetScale(float ScaleX, float ScaleY);
 	int DX9Image::SetTexture(std::wstring FileName);
+
+	// Asker
+	bool DX9Image::IsTextureLoaded();
 };
 
 #endif

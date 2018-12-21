@@ -212,3 +212,9 @@ int DX9Image::UpdateVertData(float u1, float v1, float u2, float v2) {
 	UpdateVertData();
 	return 0;
 }
+
+bool DX9Image::IsTextureLoaded() {
+	if (m_pTexture)
+		return true;
+	return false;
+}
