@@ -25,15 +25,15 @@ bool g_TileMouseLBDown;
 bool g_TileMouseRBDown;
 
 // 타일 정보
-int g_nTileWidth;
-int g_nTileHeight;
-int g_nTileCols;
-int g_nTileRows;
+int g_nTileWidth = 0;
+int g_nTileHeight = 0;
+int g_nTileCols = 0;
+int g_nTileRows = 0;
 int g_nCurrTileID = 0;
 
 // 맵 정보
-int g_nMapRows;
-int g_nMapCols;
+int g_nMapRows = 0;
+int g_nMapCols = 0;
 
 // 스크롤바
 int g_nLScrollXPos;
@@ -171,8 +171,15 @@ int TileSetter(int MouseX, int MouseY) {
 		tTileX = min(tTileX, g_nTileCols - 1);
 		tTileY = min(tTileY, g_nTileRows - 1);
 
-		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
 		g_ImgTileSel->SetPosition((float)(tTileX * g_nTileWidth), (float)(tTileY * g_nTileHeight));
+
+		tTileX = tTileX + g_nLScrollXPos;
+		tTileY = tTileY + g_nLScrollYPos;
+
+		tTileX = min(tTileX, g_nTileCols - 1);
+		tTileY = min(tTileY, g_nTileRows - 1);
+
+		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
 
 		return 0;
 	}
@@ -183,8 +190,8 @@ int TileSetter(int MouseX, int MouseY) {
 int MapSetter(int TileID, int MouseX, int MouseY) {
 	if ((g_nTileWidth) && (g_nTileHeight))
 	{
-		int tMapX = (int)(MouseX / g_nTileWidth);
-		int tMapY = (int)(MouseY / g_nTileHeight);
+		int tMapX = (int)(MouseX / g_nTileWidth) + g_nRScrollXPos;
+		int tMapY = (int)(MouseY / g_nTileHeight) + g_nRScrollYPos;
 
 		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
 
@@ -201,7 +208,7 @@ int AdjustScrollbars() {
 	g_myWND.MoveScrollbarH(g_hChildR, g_hScrRH);
 	g_myWND.MoveScrollbarV(g_hChildR, g_hScrRV);
 
-	if (g_nTileHeight)
+	if (g_nTileWidth)
 	{
 		GetClientRect(g_hChildL, &tRect);
 
@@ -243,11 +250,11 @@ int OnScrollbarChanged() {
 	int tOffsetX = 0;
 	int tOffsetY = 0;
 
-	if (g_nTileHeight)
+	if (g_nTileWidth)
 	{
 		tOffsetX = -g_nLScrollXPos * g_nTileWidth;
 		tOffsetY = -g_nLScrollYPos * g_nTileHeight;
-		g_ImgTile->SetPosition(tOffsetX, tOffsetY);
+		g_ImgTile->SetPosition((float)tOffsetX, (float)tOffsetY);
 	}
 
 	g_nRScrollXPos = GetScrollPos(g_hScrRH, SB_CTL);
@@ -257,7 +264,7 @@ int OnScrollbarChanged() {
 	{
 		tOffsetX = -g_nRScrollXPos * g_nTileWidth;
 		tOffsetY = -g_nRScrollYPos * g_nTileHeight;
-		g_myMap->SetPosition(tOffsetX, tOffsetY);
+		g_myMap->SetPosition((float)tOffsetX, (float)tOffsetY);
 	}
 	
 	return 0;
