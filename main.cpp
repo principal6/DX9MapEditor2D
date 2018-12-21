@@ -17,17 +17,38 @@ DX9Base* g_DX9Right;
 DX9Image* g_ImgTile;
 DX9Image* g_ImgTileSel;
 DX9Map* g_myMap;
+
+// 마우스
 bool g_MapMouseLBDown;
 bool g_MapMouseRBDown;
 bool g_TileMouseLBDown;
 bool g_TileMouseRBDown;
+
+// 타일 정보
 int g_nTileWidth;
 int g_nTileHeight;
 int g_nTileCols;
 int g_nTileRows;
 int g_nCurrTileID = 0;
 
+// 맵 정보
+int g_nMapRows;
+int g_nMapCols;
+
+// 스크롤바
+int g_nLScrollXPos;
+int g_nLScrollYPos;
+int g_nRScrollXPos;
+int g_nRScrollYPos;
+
+
+int MapSetter(int TileID, int MouseX, int MouseY);
+
+// Window 관련 함수
 int MainLoop();
+int OnScrollbarChanged();
+int AdjustScrollbars();
+int HandleAccelAndMenu(WPARAM wParam);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
@@ -36,10 +57,10 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 int main() {
 	JWWindow g_myWND;
 	g_hWnd = g_myWND.Create(L"Program", 50, 50, 800, 600, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
-	RECT tempRect;
-	GetClientRect(g_hWnd, &tempRect);
-	g_hChildL = g_myWND.AddChild(g_hWnd, L"ChL", 0, 0, g_WndSepX, tempRect.bottom, RGB(230, 230, 230), WndProcL);
-	g_hChildR = g_myWND.AddChild(g_hWnd, L"ChR", g_WndSepX, 0, tempRect.right - g_WndSepX, tempRect.bottom, RGB(150, 150, 150), WndProcR);
+	RECT tRect;
+	GetClientRect(g_hWnd, &tRect);
+	g_hChildL = g_myWND.AddChild(g_hWnd, L"ChL", 0, 0, g_WndSepX, tRect.bottom, RGB(230, 230, 230), WndProcL);
+	g_hChildR = g_myWND.AddChild(g_hWnd, L"ChR", g_WndSepX, 0, tRect.right - g_WndSepX, tRect.bottom, RGB(150, 150, 150), WndProcR);
 	g_hScrLH = g_myWND.AddScrollbarH(g_hChildL, 0, 10);
 	g_hScrLV = g_myWND.AddScrollbarV(g_hChildL, 0, 10);
 	g_hScrRH = g_myWND.AddScrollbarH(g_hChildR, 0, 10);
@@ -110,6 +131,8 @@ int HandleAccelAndMenu(WPARAM wParam) {
 			g_myMap->SetTileInfo(g_nTileWidth, g_nTileHeight);
 			g_nTileCols = (int)(g_ImgTile->GetWidth() / g_nTileWidth);
 			g_nTileRows = (int)(g_ImgTile->GetHeight() / g_nTileHeight);
+
+			AdjustScrollbars();
 		}
 		break;
 	case ID_ACCELERATOR40007:
@@ -139,44 +162,44 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	return 0;
 }
 
-LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
-{
-	g_myWND.BaseProc(hWnd, Message, wParam, lParam);
-
+int AdjustScrollbars() {
 	RECT tRect;
-	
-	switch (Message)
-	{
-	case WM_CREATE:
-		break;
-	case WM_COMMAND:
-		HandleAccelAndMenu(wParam);
-		break;
-	case WM_SIZE:
-		// 윈도우 크기 조절 시!
-		GetClientRect(hWnd, &tRect);
-		MoveWindow(g_hChildR, g_WndSepX, 0, tRect.right - g_WndSepX, tRect.bottom, TRUE);
-		MoveWindow(g_hChildL, 0, 0, g_WndSepX, tRect.bottom, TRUE);
-		g_myWND.MoveScrollbarH(g_hChildL, g_hScrLH);
-		g_myWND.MoveScrollbarV(g_hChildL, g_hScrLV);
-		g_myWND.MoveScrollbarH(g_hChildR, g_hScrRH);
-		g_myWND.MoveScrollbarV(g_hChildR, g_hScrRV);
-		if (g_DX9Left)
-			g_DX9Left->Resize(g_hChildL);
+	g_myWND.MoveScrollbarH(g_hChildL, g_hScrLH);
+	g_myWND.MoveScrollbarV(g_hChildL, g_hScrLV);
+	g_myWND.MoveScrollbarH(g_hChildR, g_hScrRH);
+	g_myWND.MoveScrollbarV(g_hChildR, g_hScrRV);
 
-		if (g_nTileHeight)
-		{
-			GetClientRect(g_hChildL, &tRect);
-			int nCurrMaxRows = (int)(tRect.bottom / g_nTileHeight);
-			std::cout << nCurrMaxRows << std::endl;
-			int nRestRows = g_nTileRows - nCurrMaxRows;
-			nRestRows = max(0, nRestRows);
-			g_myWND.SetScrollbar(g_hScrLV, 0, nRestRows, g_nTileRows);
-		}
-		
-		break;
+	if (g_nTileHeight)
+	{
+		GetClientRect(g_hChildL, &tRect);
+
+		int nCurrTileMaxRows = (int)(tRect.bottom / g_nTileHeight);
+		int nTileRestRows = g_nTileRows - nCurrTileMaxRows;
+		nTileRestRows = max(0, nTileRestRows);
+		g_myWND.SetScrollbar(g_hScrLV, 0, nTileRestRows, g_nTileRows);
+
+		int nCurrTileMaxCols = (int)(tRect.right / g_nTileWidth);
+		int nTileRestCols = g_nTileCols - nCurrTileMaxCols;
+		nTileRestCols = max(0, nTileRestCols);
+		g_myWND.SetScrollbar(g_hScrLH, 0, nTileRestCols, g_nTileCols);
 	}
-	return(DefWindowProc(hWnd, Message, wParam, lParam));
+
+	if (g_nMapCols)
+	{
+		GetClientRect(g_hChildR, &tRect);
+
+		int nCurrMapMaxRows = (int)(tRect.bottom / g_nTileHeight);
+		int nMapRestRows = g_nMapRows - nCurrMapMaxRows;
+		nMapRestRows = max(0, nMapRestRows);
+		g_myWND.SetScrollbar(g_hScrRV, 0, nMapRestRows, g_nMapRows);
+
+		int nCurrMapMaxCols = (int)(tRect.right / g_nTileWidth);
+		int nMapRestCols = g_nMapCols - nCurrMapMaxCols;
+		nMapRestCols = max(0, nMapRestCols);
+		g_myWND.SetScrollbar(g_hScrRH, 0, nMapRestCols, g_nMapCols);
+	}
+
+	return 0;
 }
 
 int TileSetter(int MouseX, int MouseY) {
@@ -197,9 +220,62 @@ int TileSetter(int MouseX, int MouseY) {
 	return -1;
 }
 
+int MapSetter(int TileID, int MouseX, int MouseY) {
+	if ((g_nTileWidth) && (g_nTileHeight))
+	{
+		int tMapX = (int)(MouseX / g_nTileWidth);
+		int tMapY = (int)(MouseY / g_nTileHeight);
+
+		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
+
+		return 0;
+	}
+
+	return -1;
+}
+
+int OnScrollbarChanged() {
+	g_nLScrollXPos = GetScrollPos(g_hScrLH, SB_CTL);
+	g_nLScrollYPos = GetScrollPos(g_hScrLV, SB_CTL);
+
+	g_nRScrollXPos = GetScrollPos(g_hScrRH, SB_CTL);
+	g_nRScrollYPos = GetScrollPos(g_hScrRV, SB_CTL);
+
+	return 0;
+}
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
+{
+	g_myWND.BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
+
+	RECT tRect;
+	
+	switch (Message)
+	{
+	case WM_CREATE:
+		break;
+	case WM_COMMAND:
+		HandleAccelAndMenu(wParam);
+		break;
+	case WM_SIZE:
+		// 윈도우 크기 조절 시!
+		GetClientRect(hWnd, &tRect);
+		MoveWindow(g_hChildR, g_WndSepX, 0, tRect.right - g_WndSepX, tRect.bottom, TRUE);
+		MoveWindow(g_hChildL, 0, 0, g_WndSepX, tRect.bottom, TRUE);
+
+		if (g_DX9Left)
+			g_DX9Left->Resize(g_hChildL);		
+		
+		AdjustScrollbars();
+
+		break;
+	}
+	return(DefWindowProc(hWnd, Message, wParam, lParam));
+}
+
 LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	g_myWND.BaseProc(hWnd, Message, wParam, lParam);
+	g_myWND.BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
 
 	int tMouseX = LOWORD(lParam);
 	int tMouseY = HIWORD(lParam);
@@ -239,23 +315,9 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
 }
 
-int MapSetter(int TileID, int MouseX, int MouseY) {
-	if ((g_nTileWidth) && (g_nTileHeight))
-	{
-		int tMapX = (int)(MouseX / g_nTileWidth);
-		int tMapY = (int)(MouseY / g_nTileHeight);
-
-		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
-
-		return 0;
-	}
-	
-	return -1;
-}
-
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	g_myWND.BaseProc(hWnd, Message, wParam, lParam);
+	g_myWND.BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
 
 	int tMouseX = LOWORD(lParam);
 	int tMouseY = HIWORD(lParam);
@@ -266,6 +328,14 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_COMMAND:
 		HandleAccelAndMenu(wParam);
+		break;
+	case WM_MOUSEWHEEL:
+		if ((short)HIWORD(wParam) == WHEEL_DELTA) {
+			SendMessage(hWnd, WM_VSCROLL, SB_LINEUP, (LPARAM)g_hScrRV);
+		}
+		else {
+			SendMessage(hWnd, WM_VSCROLL, SB_LINEDOWN, (LPARAM)g_hScrRV);
+		}
 		break;
 	case WM_LBUTTONDOWN:
 		g_MapMouseLBDown = true;
@@ -294,7 +364,6 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 	wchar_t tempStr[255] = { 0 };
-	int tMapSizeX, tMapSizeY;
 
 	switch (iMessage)
 	{
@@ -305,13 +374,15 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 		{
 		case IDOK:
 			GetDlgItemText(hDlg, IDC_EDIT1, tempStr, 255);
-			tMapSizeX = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
-			tMapSizeY = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
 
-			if (tMapSizeX && tMapSizeY)
-				g_myMap->CreateMap(tMapSizeX, tMapSizeY);
+			// 맵 만들기
+			g_nMapCols = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
+			g_nMapRows = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
 
-			g_myMap->SetMapFragment(0, 0, 0);
+			if (g_nMapCols && g_nMapRows)
+				g_myMap->CreateMap(g_nMapCols, g_nMapRows);
+
+			AdjustScrollbars();
 
 		case IDCANCEL:
 			EndDialog(hDlg, 0);

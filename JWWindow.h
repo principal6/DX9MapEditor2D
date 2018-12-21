@@ -5,6 +5,8 @@
 #include <string>
 #include "resource.h"
 
+typedef int (* ONSCROLLBARCHG)();
+
 class JWWindow
 {
 private:
@@ -18,7 +20,7 @@ private:
 	OPENFILENAME m_OFN;
 	std::wstring m_FileText;
 	static const int FILELINELEN = 256;
-	
+
 private:
 	HWND JWWindow::AddControl(LPCWSTR ClassName, HWND hParentWnd, DWORD Style, int X, int Y, int W, int H);
 	int JWWindow::SetDlgBase();
@@ -47,5 +49,6 @@ public:
 	HINSTANCE JWWindow::GethInstance() { return m_hInst; };
 	HACCEL JWWindow::GethAccel() { return m_hAccel; };
 
-	LRESULT CALLBACK JWWindow::BaseProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
+	int JWWindow::BaseProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam,
+		ONSCROLLBARCHG pScrollbar = NULL);
 };

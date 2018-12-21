@@ -7,10 +7,6 @@
 
 class DX9Base
 {
-// 공용 변수
-private:
-	int (*m_pMainLoop);
-
 // 윈도우 변수
 private:
 	HINSTANCE	m_hInstance;

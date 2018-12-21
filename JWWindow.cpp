@@ -189,7 +189,7 @@ std::wstring JWWindow::GetDlgFileName() {
 	return m_FileName;
 }
 
-LRESULT CALLBACK JWWindow::BaseProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam) {
+int JWWindow::BaseProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam, ONSCROLLBARCHG pScrollbar) {
 	int tempScrPos;
 	int tempScrMin;
 	int tempScrMax;
@@ -221,6 +221,8 @@ LRESULT CALLBACK JWWindow::BaseProc(HWND hWnd, UINT Message, WPARAM wParam, LPAR
 		}
 		SetScrollPos((HWND)lParam, SB_CTL, tempScrPos, TRUE);
 		InvalidateRect(hWnd, NULL, FALSE);
+		if (pScrollbar)
+			pScrollbar();
 		break;
 	case WM_VSCROLL:
 		GetScrollRange((HWND)lParam, SB_CTL, &tempScrMin, &tempScrMax);
@@ -245,6 +247,8 @@ LRESULT CALLBACK JWWindow::BaseProc(HWND hWnd, UINT Message, WPARAM wParam, LPAR
 		}
 		SetScrollPos((HWND)lParam, SB_CTL, tempScrPos, TRUE);
 		InvalidateRect(hWnd, NULL, FALSE);
+		if (pScrollbar)
+			pScrollbar();
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
