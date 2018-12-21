@@ -21,6 +21,7 @@ private:
 private:
 	LPDIRECT3D9             m_pD3D;
 	LPDIRECT3DDEVICE9       m_pD3DDevice;
+	D3DCOLOR				m_BGColor;
 
 private:
 	HWND DX9Base::CreateWND(const wchar_t* Name,
@@ -41,6 +42,10 @@ public:
 	int DX9Base::Resize(HWND hWnd);
 	int DX9Base::BeginRender();
 	int DX9Base::EndRender();
+
+// Setter
+public:
+	int DX9Base::SetBGColor(D3DCOLOR color);
 
 // Getter
 public:
