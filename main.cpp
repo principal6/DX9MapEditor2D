@@ -23,6 +23,8 @@ bool g_MapMouseLBDown;
 bool g_MapMouseRBDown;
 bool g_TileMouseLBDown;
 bool g_TileMouseRBDown;
+int g_nTileXStart;
+int g_nTileYStart;
 
 // 타일 정보
 int g_nTileWidth = 0;
@@ -30,6 +32,9 @@ int g_nTileHeight = 0;
 int g_nTileCols = 0;
 int g_nTileRows = 0;
 int g_nCurrTileID = 0;
+bool g_bMultiSel = false;
+int g_nMSRangeX = 0;
+int g_nMSRangeY = 0;
 
 // 맵 정보
 int g_nMapRows = 0;
@@ -43,6 +48,7 @@ int g_nRScrollYPos;
 
 
 int MapSetter(int TileID, int MouseX, int MouseY);
+int TileSetter(int MouseX, int MouseY, int RangeX = 0, int RangeY = 0);
 
 // Window 관련 함수
 int MainLoop();
@@ -162,7 +168,7 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	return 0;
 }
 
-int TileSetter(int MouseX, int MouseY) {
+int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY) {
 	if ((g_nTileWidth) && (g_nTileHeight))
 	{
 		int tTileX = (int)(MouseX / g_nTileWidth);
@@ -171,7 +177,14 @@ int TileSetter(int MouseX, int MouseY) {
 		tTileX = min(tTileX, g_nTileCols - 1);
 		tTileY = min(tTileY, g_nTileRows - 1);
 
+		g_ImgTileSel->SetSize(g_nTileWidth, g_nTileHeight);
 		g_ImgTileSel->SetPosition((float)(tTileX * g_nTileWidth), (float)(tTileY * g_nTileHeight));
+
+		if ((RangeX > 1) || (RangeY > 1))
+		{
+			g_bMultiSel = true;
+			g_ImgTileSel->SetSize(g_nTileWidth * RangeX, g_nTileHeight * RangeY);
+		}
 
 		tTileX = tTileX + g_nLScrollXPos;
 		tTileY = tTileY + g_nLScrollYPos;
@@ -193,7 +206,29 @@ int MapSetter(int TileID, int MouseX, int MouseY) {
 		int tMapX = (int)(MouseX / g_nTileWidth) + g_nRScrollXPos;
 		int tMapY = (int)(MouseY / g_nTileHeight) + g_nRScrollYPos;
 
-		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
+		if (g_bMultiSel)
+		{
+			int NewTileID = TileID;
+			for (int i = 0; i < g_nMSRangeX; i++)
+			{
+				for (int j = 0; j < g_nMSRangeY; j++)
+				{
+					if (TileID == -1)
+					{
+						NewTileID = -1;
+					}
+					else
+					{
+						NewTileID = TileID + i + (j * g_nTileCols);
+					}
+					g_myMap->SetMapFragment(NewTileID, tMapX + i, tMapY + j);
+				}
+			}
+		}
+		else
+		{
+			g_myMap->SetMapFragment(TileID, tMapX, tMapY);
+		}
 
 		return 0;
 	}
@@ -325,8 +360,11 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_LBUTTONDOWN:
+		g_bMultiSel = false;
 		g_TileMouseLBDown = true;
 		TileSetter(tMouseX, tMouseY);
+		g_nTileXStart = tMouseX;
+		g_nTileYStart = tMouseY;
 		break;
 	case WM_LBUTTONUP:
 		g_TileMouseLBDown = false;
@@ -338,7 +376,18 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		g_TileMouseRBDown = false;
 		break;
 	case WM_MOUSEMOVE:
+		if (g_nTileWidth)
+		{
+			if (g_TileMouseLBDown)
+			{
+				// 타일 다중 선택
+				g_nMSRangeX = (int)((tMouseX - g_nTileXStart) / g_nTileWidth) + 1;
+				g_nMSRangeY = (int)((tMouseY - g_nTileYStart) / g_nTileHeight) + 1;
 
+				TileSetter(g_nTileXStart, g_nTileYStart, g_nMSRangeX, g_nMSRangeY);
+			}
+		}
+		
 		break;
 	}
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
