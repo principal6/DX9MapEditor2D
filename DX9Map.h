@@ -7,10 +7,10 @@
 
 class DX9Map : protected DX9Image {
 private:
-	int		mnRows;
-	int		mnCols;
-	float	mfSheetWidth;
-	float	mfSheetHeight;
+	int	m_nRows;
+	int	m_nCols;
+	int	m_nSheetWidth;
+	int	m_nSheetHeight;
 
 public:
 	DX9Map();
@@ -19,7 +19,7 @@ public:
 	int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev);
 	int DX9Map::Destroy();
 	int DX9Map::SetTexture(std::wstring FileName);
-	int DX9Map::SetTileInfo(float TileW, float TileH);
+	int DX9Map::SetTileInfo(int TileW, int TileH);
 	int DX9Map::AddMapFragment(int TileID, float X, float Y);
 	int DX9Map::AddEnd();
 	int DX9Map::Draw();

@@ -47,6 +47,7 @@ int main() {
 
 	g_myMap = new DX9Map;
 	g_myMap->Create(g_DX9Left->GetDevice());
+	g_myMap->SetTileInfo(32, 32);
 
 	g_DX9Left->RunWithAccel(MainLoop, g_myWND.GethAccel());
 

@@ -1,30 +1,30 @@
 #include "DX9Map.h"
 
 DX9Map::DX9Map() {
-	mnRows = 0;
-	mnCols = 0;
-	mfSheetWidth = 0.0f;
-	mfSheetHeight = 0.0f;
+	m_nRows = 0;
+	m_nCols = 0;
+	m_nSheetWidth = 0;
+	m_nSheetHeight = 0;
 }
 
 int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev) {
 	// 멤버 변수 초기화
-	mpDevice = pD3DDev;
+	m_pDevice = pD3DDev;
 
-	mpVB = NULL;
-	mpIB = NULL;
-	mpTexture = NULL;
+	m_pVB = NULL;
+	m_pIB = NULL;
+	m_pTexture = NULL;
 
-	mVert.clear();
-	mInd.clear();
+	m_Vert.clear();
+	m_Ind.clear();
 
-	mX = 0.0f;
-	mY = 0.0f;
-	mScaleX = 1.0f;
-	mScaleY = 1.0f;
+	m_fX = 0.0f;
+	m_fY = 0.0f;
+	m_fScaleX = 1.0f;
+	m_fScaleY = 1.0f;
 
-	mWidth = 32.0f;
-	mHeight = 32.0f;
+	m_nWidth = 32;
+	m_nHeight = 32;
 
 	return 0;
 }
@@ -41,38 +41,38 @@ int DX9Map::SetTexture(std::wstring FileName) {
 	return 0;
 }
 
-int DX9Map::SetTileInfo(float TileW, float TileH) {
+int DX9Map::SetTileInfo(int TileW, int TileH) {
 
-	mfSheetWidth = mWidth;
-	mfSheetHeight = mHeight;
+	m_nSheetWidth = m_nWidth;
+	m_nSheetHeight = m_nHeight;
 
-	mWidth = TileW;
-	mHeight = TileH;
+	m_nWidth = TileW;
+	m_nHeight = TileH;
 
-	mnRows = (int)(mfSheetWidth / mWidth);
-	mnCols = (int)(mfSheetHeight / mHeight);
+	m_nRows = (int)(m_nSheetWidth / m_nWidth);
+	m_nCols = (int)(m_nSheetHeight / m_nHeight);
 
 	return 0;
 }
 
 int DX9Map::AddMapFragment(int TileID, float X, float Y) {
-	int TileX = (TileID % mnCols);
-	int TileY = (TileID / mnCols);
+	int TileX = (TileID % m_nCols);
+	int TileY = (TileID / m_nCols);
 
-	float u1 = (float)(TileX * mWidth) / mfSheetWidth;
-	float u2 = u1 + (float)mWidth / mfSheetWidth;
-	float v1 = (float)(TileY * mHeight) / mfSheetHeight;
-	float v2 = v1 + (float)mHeight / mfSheetHeight;
+	float u1 = (float)(TileX * m_nWidth) / (float)m_nSheetWidth;
+	float u2 = u1 + (float)m_nWidth / (float)m_nSheetWidth;
+	float v1 = (float)(TileY * m_nHeight) / (float)m_nSheetHeight;
+	float v2 = v1 + (float)m_nHeight / (float)m_nSheetHeight;
 
-	mVert.push_back(DX9VERTEX(X, Y, 0, 1, 0xffffffff, u1, v1));
-	mVert.push_back(DX9VERTEX(X + mWidth, Y, 0, 1, 0xffffffff, u2, v1));
-	mVert.push_back(DX9VERTEX(X, Y + mHeight, 0, 1, 0xffffffff, u1, v2));
-	mVert.push_back(DX9VERTEX(X + mWidth, Y + mHeight, 0, 1, 0xffffffff, u2, v2));
-	mnVertCount = (int)mVert.size();
+	m_Vert.push_back(DX9VERTEX(X, Y, 0, 1, 0xffffffff, u1, v1));
+	m_Vert.push_back(DX9VERTEX(X + m_nWidth, Y, 0, 1, 0xffffffff, u2, v1));
+	m_Vert.push_back(DX9VERTEX(X, Y + m_nHeight, 0, 1, 0xffffffff, u1, v2));
+	m_Vert.push_back(DX9VERTEX(X + m_nWidth, Y + m_nHeight, 0, 1, 0xffffffff, u2, v2));
+	m_nVertCount = (int)m_Vert.size();
 
-	mInd.push_back(DX9INDEX(mnVertCount - 4, mnVertCount - 3, mnVertCount - 1));
-	mInd.push_back(DX9INDEX(mnVertCount - 4, mnVertCount - 1, mnVertCount - 2));
-	mnIndCount = (int)mInd.size();
+	m_Ind.push_back(DX9INDEX(m_nVertCount - 4, m_nVertCount - 3, m_nVertCount - 1));
+	m_Ind.push_back(DX9INDEX(m_nVertCount - 4, m_nVertCount - 1, m_nVertCount - 2));
+	m_nIndCount = (int)m_Ind.size();
 
 	return 0;
 }

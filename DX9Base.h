@@ -28,7 +28,6 @@ private:
 		DX9WINDOW_STYLE WindowStyle, DX9COLOR BackColor);
 	int DX9Base::InitD3D();
 
-// 공용 함수
 public:
 	DX9Base();
 	~DX9Base() {};
