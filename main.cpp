@@ -16,6 +16,10 @@ DX9Base* g_DX9Left;
 DX9Base* g_DX9Right;
 DX9Image* g_ImgTile;
 DX9Map* g_myMap;
+bool g_MouseLBDown;
+bool g_MouseRBDown;
+int g_nTileWidth;
+int g_nTileHeight;
 
 int MainLoop();
 LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
@@ -40,14 +44,13 @@ int main() {
 
 	g_DX9Right = new DX9Base;
 	g_DX9Right->CreateOnWindow(g_hChildR);
+	g_DX9Right->SetBGColor(D3DCOLOR_XRGB(50, 50, 50));
 
 	g_ImgTile = new DX9Image;
 	g_ImgTile->Create(g_DX9Left->GetDevice());
-	g_ImgTile->SetTexture(L"maptile32x32.png");
 
 	g_myMap = new DX9Map;
-	g_myMap->Create(g_DX9Left->GetDevice());
-	g_myMap->SetTileInfo(32, 32);
+	g_myMap->Create(g_DX9Right->GetDevice());
 
 	g_DX9Left->RunWithAccel(MainLoop, g_myWND.GethAccel());
 
@@ -71,6 +74,8 @@ int MainLoop() {
 
 	g_DX9Right->BeginRender();
 
+		g_myMap->Draw();
+
 	g_DX9Right->EndRender();
 	return 0;
 }
@@ -81,7 +86,12 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	case ID_TILE_OPEN:
 		if (g_myWND.OpenFileDlg(L"모든 파일\0*.*\0") == TRUE)
 		{
+			// 타일 열기
 			g_ImgTile->SetTexture(g_myWND.GetDlgFileName().c_str());
+			g_myMap->SetTexture(g_myWND.GetDlgFileName().c_str());
+			g_nTileWidth = 32;
+			g_nTileHeight = 32;
+			g_myMap->SetTileInfo(g_nTileWidth, g_nTileHeight);
 		}
 		break;
 	case ID_ACCELERATOR40007:
@@ -162,9 +172,22 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
 }
 
+int MapSetter(int TileID, int MouseX, int MouseY) {
+	int tMapX = (int)(MouseX / g_nTileWidth);
+	int tMapY = (int)(MouseY / g_nTileHeight);
+
+	g_myMap->SetMapFragment(TileID, tMapX, tMapY);
+	std::cout << tMapX << " / " << tMapY << std::endl;
+	
+	return 0;
+}
+
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
 	g_myWND.BaseProc(hWnd, Message, wParam, lParam);
+
+	int tMouseX = LOWORD(lParam);
+	int tMouseY = HIWORD(lParam);
 
 	switch (Message)
 	{
@@ -173,6 +196,26 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		HandleAccelAndMenu(wParam);
 		break;
+	case WM_LBUTTONDOWN:
+		g_MouseLBDown = true;
+		MapSetter(0, tMouseX, tMouseY);
+		break;
+	case WM_LBUTTONUP:
+		g_MouseLBDown = false;
+		break;
+	case WM_RBUTTONDOWN:
+		g_MouseRBDown = true;
+		MapSetter(-1, tMouseX, tMouseY);
+		break;
+	case WM_RBUTTONUP:
+		g_MouseRBDown = false;
+		break;
+	case WM_MOUSEMOVE:
+		if (g_MouseLBDown)
+			MapSetter(0, tMouseX, tMouseY);
+		if (g_MouseRBDown)
+			MapSetter(-1, tMouseX, tMouseY);
+		break;
 	}
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
 }
@@ -180,7 +223,7 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 	wchar_t tempStr[255] = { 0 };
-	int tWidth, tHeight;
+	int tMapSizeX, tMapSizeY;
 
 	switch (iMessage)
 	{
@@ -191,13 +234,14 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 		{
 		case IDOK:
 			GetDlgItemText(hDlg, IDC_EDIT1, tempStr, 255);
-			tWidth = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
-			tHeight = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
+			tMapSizeX = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
+			tMapSizeY = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
 
-			if (tWidth && tHeight)
+			if (tMapSizeX && tMapSizeY)
+				g_myMap->CreateMap(tMapSizeX, tMapSizeY);
 
+			g_myMap->SetMapFragment(0, 0, 0);
 
-			break;
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
 			break;

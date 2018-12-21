@@ -1,10 +1,10 @@
 #include "DX9Map.h"
 
 DX9Map::DX9Map() {
-	m_nRows = 0;
-	m_nCols = 0;
-	m_nSheetWidth = 0;
-	m_nSheetHeight = 0;
+	m_nTileCols = 0;
+	m_nTileRows = 0;
+	m_nTileSheetWidth = 0;
+	m_nTileSheetHeight = 0;
 }
 
 int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev) {
@@ -42,32 +42,71 @@ int DX9Map::SetTexture(std::wstring FileName) {
 }
 
 int DX9Map::SetTileInfo(int TileW, int TileH) {
-
-	m_nSheetWidth = m_nWidth;
-	m_nSheetHeight = m_nHeight;
+	m_nTileSheetWidth = m_nWidth;
+	m_nTileSheetHeight = m_nHeight;
 
 	m_nWidth = TileW;
 	m_nHeight = TileH;
 
-	m_nRows = (int)(m_nSheetWidth / m_nWidth);
-	m_nCols = (int)(m_nSheetHeight / m_nHeight);
+	m_nTileCols = (int)(m_nTileSheetWidth / m_nWidth);
+	m_nTileRows = (int)(m_nTileSheetHeight / m_nHeight);
 
 	return 0;
 }
 
-int DX9Map::AddMapFragment(int TileID, float X, float Y) {
-	int TileX = (TileID % m_nCols);
-	int TileY = (TileID / m_nCols);
+int DX9Map::CreateMap(int MapSizeX, int MapSizeY) {
+	if (!m_nTileRows) // 타일이 아직 안 열림
+		return -1;
 
-	float u1 = (float)(TileX * m_nWidth) / (float)m_nSheetWidth;
-	float u2 = u1 + (float)m_nWidth / (float)m_nSheetWidth;
-	float v1 = (float)(TileY * m_nHeight) / (float)m_nSheetHeight;
-	float v2 = v1 + (float)m_nHeight / (float)m_nSheetHeight;
+	m_Vert.clear();
+	m_Ind.clear();
 
-	m_Vert.push_back(DX9VERTEX(X, Y, 0, 1, 0xffffffff, u1, v1));
-	m_Vert.push_back(DX9VERTEX(X + m_nWidth, Y, 0, 1, 0xffffffff, u2, v1));
-	m_Vert.push_back(DX9VERTEX(X, Y + m_nHeight, 0, 1, 0xffffffff, u1, v2));
-	m_Vert.push_back(DX9VERTEX(X + m_nWidth, Y + m_nHeight, 0, 1, 0xffffffff, u2, v2));
+	m_nMapCols = MapSizeX;
+	m_nMapRows = MapSizeY;
+
+	for (int i = 0; i < MapSizeY; i++)
+	{
+		for (int j = 0; j < MapSizeX; j++)
+		{
+			AddMapFragment(-1, j, i);
+		}
+	}
+	AddEnd();
+
+	return 0;
+}
+
+int DX9Map::AddMapFragment(int TileID, int X, int Y) {
+	float u1;
+	float u2;
+	float v1;
+	float v2;
+
+	if (TileID == -1)
+	{
+		u1 = 0.0f;
+		u2 = 0.0f;
+		v1 = 0.0f;
+		v2 = 0.0f;
+	}
+	else
+	{
+		int TileX = (TileID % m_nTileRows);
+		int TileY = (TileID / m_nTileRows);
+
+		u1 = (float)(TileX * m_nWidth) / m_nTileSheetWidth;
+		u2 = u1 + (float)m_nWidth / m_nTileSheetWidth;
+		v1 = (float)(TileY * m_nHeight) / m_nTileSheetHeight;
+		v2 = v1 + (float)m_nHeight / m_nTileSheetHeight;
+	}
+
+	float tX = (float)(X * m_nWidth);
+	float tY = (float)(Y * m_nHeight);
+
+	m_Vert.push_back(DX9VERTEX(tX, tY, 0, 1, 0xffffffff, u1, v1));
+	m_Vert.push_back(DX9VERTEX(tX + m_nWidth, tY, 0, 1, 0xffffffff, u2, v1));
+	m_Vert.push_back(DX9VERTEX(tX, tY + m_nHeight, 0, 1, 0xffffffff, u1, v2));
+	m_Vert.push_back(DX9VERTEX(tX + m_nWidth, tY + m_nHeight, 0, 1, 0xffffffff, u2, v2));
 	m_nVertCount = (int)m_Vert.size();
 
 	m_Ind.push_back(DX9INDEX(m_nVertCount - 4, m_nVertCount - 3, m_nVertCount - 1));
@@ -83,6 +122,51 @@ int DX9Map::AddEnd() {
 	DX9Image::UpdateVB();
 
 	return 0;
+}
+
+int DX9Map::SetMapFragment(int TileID, int X, int Y) {
+	if ((X < m_nMapCols) && (Y < m_nMapRows))
+	{
+		int VertID0 = (X + (Y * m_nMapCols)) * 4;
+
+		float u1;
+		float u2;
+		float v1;
+		float v2;
+
+		if (TileID == -1)
+		{
+			u1 = 0.0f;
+			u2 = 0.0f;
+			v1 = 0.0f;
+			v2 = 0.0f;
+		}
+		else
+		{
+			int TileX = (TileID % m_nTileRows);
+			int TileY = (TileID / m_nTileRows);
+
+			u1 = (float)(TileX * m_nWidth) / m_nTileSheetWidth;
+			u2 = u1 + (float)m_nWidth / m_nTileSheetWidth;
+			v1 = (float)(TileY * m_nHeight) / m_nTileSheetHeight;
+			v2 = v1 + (float)m_nHeight / m_nTileSheetHeight;
+		}
+
+		m_Vert[VertID0].u = u1;
+		m_Vert[VertID0].v = v1;
+		m_Vert[VertID0 + 1].u = u2;
+		m_Vert[VertID0 + 1].v = v1;
+		m_Vert[VertID0 + 2].u = u1;
+		m_Vert[VertID0 + 2].v = v2;
+		m_Vert[VertID0 + 3].u = u2;
+		m_Vert[VertID0 + 3].v = v2;
+
+		UpdateVB();
+
+		return 0;
+	}
+
+	return -1;
 }
 
 int DX9Map::Draw() {
