@@ -162,6 +162,38 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	return 0;
 }
 
+int TileSetter(int MouseX, int MouseY) {
+	if ((g_nTileWidth) && (g_nTileHeight))
+	{
+		int tTileX = (int)(MouseX / g_nTileWidth);
+		int tTileY = (int)(MouseY / g_nTileHeight);
+
+		tTileX = min(tTileX, g_nTileCols - 1);
+		tTileY = min(tTileY, g_nTileRows - 1);
+
+		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
+		g_ImgTileSel->SetPosition((float)(tTileX * g_nTileWidth), (float)(tTileY * g_nTileHeight));
+
+		return 0;
+	}
+
+	return -1;
+}
+
+int MapSetter(int TileID, int MouseX, int MouseY) {
+	if ((g_nTileWidth) && (g_nTileHeight))
+	{
+		int tMapX = (int)(MouseX / g_nTileWidth);
+		int tMapY = (int)(MouseY / g_nTileHeight);
+
+		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
+
+		return 0;
+	}
+
+	return -1;
+}
+
 int AdjustScrollbars() {
 	RECT tRect;
 	g_myWND.MoveScrollbarH(g_hChildL, g_hScrLH);
@@ -199,48 +231,35 @@ int AdjustScrollbars() {
 		g_myWND.SetScrollbar(g_hScrRH, 0, nMapRestCols, g_nMapCols);
 	}
 
+	OnScrollbarChanged();
+
 	return 0;
-}
-
-int TileSetter(int MouseX, int MouseY) {
-	if ((g_nTileWidth) && (g_nTileHeight))
-	{
-		int tTileX = (int)(MouseX / g_nTileWidth);
-		int tTileY = (int)(MouseY / g_nTileHeight);
-
-		tTileX = min(tTileX, g_nTileCols - 1);
-		tTileY = min(tTileY, g_nTileRows - 1);
-
-		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
-		g_ImgTileSel->SetPosition((float)(tTileX * g_nTileWidth), (float)(tTileY * g_nTileHeight));
-
-		return 0;
-	}
-
-	return -1;
-}
-
-int MapSetter(int TileID, int MouseX, int MouseY) {
-	if ((g_nTileWidth) && (g_nTileHeight))
-	{
-		int tMapX = (int)(MouseX / g_nTileWidth);
-		int tMapY = (int)(MouseY / g_nTileHeight);
-
-		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
-
-		return 0;
-	}
-
-	return -1;
 }
 
 int OnScrollbarChanged() {
 	g_nLScrollXPos = GetScrollPos(g_hScrLH, SB_CTL);
 	g_nLScrollYPos = GetScrollPos(g_hScrLV, SB_CTL);
 
+	int tOffsetX = 0;
+	int tOffsetY = 0;
+
+	if (g_nTileHeight)
+	{
+		tOffsetX = -g_nLScrollXPos * g_nTileWidth;
+		tOffsetY = -g_nLScrollYPos * g_nTileHeight;
+		g_ImgTile->SetPosition(tOffsetX, tOffsetY);
+	}
+
 	g_nRScrollXPos = GetScrollPos(g_hScrRH, SB_CTL);
 	g_nRScrollYPos = GetScrollPos(g_hScrRV, SB_CTL);
 
+	if (g_nMapCols)
+	{
+		tOffsetX = -g_nRScrollXPos * g_nTileWidth;
+		tOffsetY = -g_nRScrollYPos * g_nTileHeight;
+		g_myMap->SetPosition(tOffsetX, tOffsetY);
+	}
+	
 	return 0;
 }
 
@@ -264,7 +283,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		MoveWindow(g_hChildL, 0, 0, g_WndSepX, tRect.bottom, TRUE);
 
 		if (g_DX9Left)
-			g_DX9Left->Resize(g_hChildL);		
+			g_DX9Left->Resize(g_hChildL);
+
+		if (g_DX9Right)
+			g_DX9Right->Resize(g_hChildR);
 		
 		AdjustScrollbars();
 
