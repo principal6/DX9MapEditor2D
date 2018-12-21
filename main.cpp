@@ -32,6 +32,8 @@ int g_nTileHeight = 0;
 int g_nTileCols = 0;
 int g_nTileRows = 0;
 int g_nCurrTileID = 0;
+int g_nCurrTileX = 0;
+int g_nCurrTileY = 0;
 bool g_bMultiSel = false;
 int g_nMSRangeX = 0;
 int g_nMSRangeY = 0;
@@ -193,6 +195,8 @@ int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY) {
 		tTileY = min(tTileY, g_nTileRows - 1);
 
 		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
+		g_nCurrTileX = tTileX;
+		g_nCurrTileY = tTileY;
 
 		return 0;
 	}
@@ -290,6 +294,10 @@ int OnScrollbarChanged() {
 		tOffsetX = -g_nLScrollXPos * g_nTileWidth;
 		tOffsetY = -g_nLScrollYPos * g_nTileHeight;
 		g_ImgTile->SetPosition((float)tOffsetX, (float)tOffsetY);
+		
+		tOffsetX = (g_nCurrTileX - g_nLScrollXPos) * g_nTileWidth;
+		tOffsetY = (g_nCurrTileY - g_nLScrollYPos) * g_nTileHeight;
+		g_ImgTileSel->SetPosition((float)tOffsetX, (float)tOffsetY);
 	}
 
 	g_nRScrollXPos = GetScrollPos(g_hScrRH, SB_CTL);
