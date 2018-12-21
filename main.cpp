@@ -1,6 +1,7 @@
 #include "JWWindow.h"
 #include "DX9Base.h"
 #include "DX9Image.h"
+#include "DX9Map.h"
 
 JWWindow g_myWND;
 HWND g_hWnd;
@@ -12,12 +13,15 @@ HWND g_hScrRH;
 HWND g_hScrRV;
 int g_WndSepX = 200;
 DX9Base* g_DX9Left;
-DX9Image* g_myImage;
+DX9Base* g_DX9Right;
+DX9Image* g_ImgTile;
+DX9Map* g_myMap;
 
 int MainLoop();
 LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
 int main() {
 	JWWindow g_myWND;
@@ -34,17 +38,39 @@ int main() {
 	g_DX9Left = new DX9Base;
 	g_DX9Left->CreateOnWindow(g_hChildL);
 
-	g_myImage = new DX9Image;
-	g_myImage->Create(g_DX9Left->GetDevice());
-	g_myImage->SetTexture(L"maptile32x32.png");
+	g_DX9Right = new DX9Base;
+	g_DX9Right->CreateOnWindow(g_hChildR);
+
+	g_ImgTile = new DX9Image;
+	g_ImgTile->Create(g_DX9Left->GetDevice());
+	g_ImgTile->SetTexture(L"maptile32x32.png");
+
+	g_myMap = new DX9Map;
+	g_myMap->Create(g_DX9Left->GetDevice());
 
 	g_DX9Left->RunWithAccel(MainLoop, g_myWND.GethAccel());
+
+	g_DX9Left->Destroy();
+	g_DX9Right->Destroy();
+	g_ImgTile->Destroy();
+	g_myMap->Destroy();
+
+	delete g_DX9Left;
+	delete g_DX9Right;
+	delete g_ImgTile;
+	delete g_myMap;
 }
 
 int MainLoop() {
 	g_DX9Left->BeginRender();
-	g_myImage->Draw();
+
+		g_ImgTile->Draw();
+
 	g_DX9Left->EndRender();
+
+	g_DX9Right->BeginRender();
+
+	g_DX9Right->EndRender();
 	return 0;
 }
 
@@ -54,11 +80,12 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	case ID_TILE_OPEN:
 		if (g_myWND.OpenFileDlg(L"모든 파일\0*.*\0") == TRUE)
 		{
-			g_myImage->SetTexture(g_myWND.GetDlgFileName().c_str());
+			g_ImgTile->SetTexture(g_myWND.GetDlgFileName().c_str());
 		}
 		break;
 	case ID_ACCELERATOR40007:
 	case ID_FILE_NEW:
+		DialogBox(g_myWND.GethInstance(), MAKEINTRESOURCE(IDD_DIALOG1), g_hWnd, DlgProcNewMap);
 		break;
 	case ID_ACCELERATOR40009:
 	case ID_FILE_OPEN:
@@ -147,4 +174,34 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		break;
 	}
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
+}
+
+LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
+{
+	wchar_t tempStr[255] = { 0 };
+	int tWidth, tHeight;
+
+	switch (iMessage)
+	{
+	case WM_INITDIALOG:
+		return TRUE;
+	case WM_COMMAND:
+		switch (wParam)
+		{
+		case IDOK:
+			GetDlgItemText(hDlg, IDC_EDIT1, tempStr, 255);
+			tWidth = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
+			tHeight = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
+
+			if (tWidth && tHeight)
+
+
+			break;
+		case IDCANCEL:
+			EndDialog(hDlg, 0);
+			break;
+		}
+		return TRUE;
+	}
+	return FALSE;
 }

@@ -23,8 +23,8 @@ int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev) {
 	mScaleX = 1.0f;
 	mScaleY = 1.0f;
 
-	mWidth = 10.0f;
-	mHeight = 10.0f;
+	mWidth = 32.0f;
+	mHeight = 32.0f;
 
 	return 0;
 }
