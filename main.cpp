@@ -11,7 +11,7 @@ HWND g_hScrLH;
 HWND g_hScrLV;
 HWND g_hScrRH;
 HWND g_hScrRV;
-int g_WndSepX = 200;
+int g_WndSepX = 224;
 DX9Base* g_DX9Left;
 DX9Base* g_DX9Right;
 DX9Image* g_ImgTile;
@@ -153,6 +153,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		HandleAccelAndMenu(wParam);
 		break;
 	case WM_SIZE:
+		// 윈도우 크기 조절 시!
 		GetClientRect(hWnd, &tRect);
 		MoveWindow(g_hChildR, g_WndSepX, 0, tRect.right - g_WndSepX, tRect.bottom, TRUE);
 		MoveWindow(g_hChildL, 0, 0, g_WndSepX, tRect.bottom, TRUE);
@@ -162,6 +163,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		g_myWND.MoveScrollbarV(g_hChildR, g_hScrRV);
 		if (g_DX9Left)
 			g_DX9Left->Resize(g_hChildL);
+
+		if (g_nTileHeight)
+		{
+			GetClientRect(g_hChildL, &tRect);
+			int nCurrMaxRows = (int)(tRect.bottom / g_nTileHeight);
+			std::cout << nCurrMaxRows << std::endl;
+			int nRestRows = g_nTileRows - nCurrMaxRows;
+			nRestRows = max(0, nRestRows);
+			g_myWND.SetScrollbar(g_hScrLV, 0, nRestRows, g_nTileRows);
+		}
+		
 		break;
 	}
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
@@ -173,10 +185,11 @@ int TileSetter(int MouseX, int MouseY) {
 		int tTileX = (int)(MouseX / g_nTileWidth);
 		int tTileY = (int)(MouseY / g_nTileHeight);
 
-		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
-		g_ImgTileSel->SetPosition(tTileX * g_nTileWidth, tTileY * g_nTileHeight);
+		tTileX = min(tTileX, g_nTileCols - 1);
+		tTileY = min(tTileY, g_nTileRows - 1);
 
-		std::cout << g_nCurrTileID << std::endl;
+		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
+		g_ImgTileSel->SetPosition((float)(tTileX * g_nTileWidth), (float)(tTileY * g_nTileHeight));
 
 		return 0;
 	}
@@ -233,7 +246,6 @@ int MapSetter(int TileID, int MouseX, int MouseY) {
 		int tMapY = (int)(MouseY / g_nTileHeight);
 
 		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
-		std::cout << tMapX << " / " << tMapY << std::endl;
 
 		return 0;
 	}

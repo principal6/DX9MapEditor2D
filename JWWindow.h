@@ -35,6 +35,7 @@ public:
 
 	HWND JWWindow::AddScrollbarH(HWND hParentWnd, int Min, int Max);
 	HWND JWWindow::AddScrollbarV(HWND hParentWnd, int Min, int Max);
+	int JWWindow::SetScrollbar(HWND hWnd, int Min, int Max, int TotalMax);
 	int JWWindow::MoveScrollbarH(HWND hParentWnd, HWND hWnd);
 	int JWWindow::MoveScrollbarV(HWND hParentWnd, HWND hWnd);
 
