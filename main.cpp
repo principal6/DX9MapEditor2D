@@ -15,11 +15,17 @@ int g_WndSepX = 200;
 DX9Base* g_DX9Left;
 DX9Base* g_DX9Right;
 DX9Image* g_ImgTile;
+DX9Image* g_ImgTileSel;
 DX9Map* g_myMap;
-bool g_MouseLBDown;
-bool g_MouseRBDown;
+bool g_MapMouseLBDown;
+bool g_MapMouseRBDown;
+bool g_TileMouseLBDown;
+bool g_TileMouseRBDown;
 int g_nTileWidth;
 int g_nTileHeight;
+int g_nTileCols;
+int g_nTileRows;
+int g_nCurrTileID = 0;
 
 int MainLoop();
 LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
@@ -41,6 +47,7 @@ int main() {
 
 	g_DX9Left = new DX9Base;
 	g_DX9Left->CreateOnWindow(g_hChildL);
+	g_DX9Left->SetBGColor(D3DCOLOR_XRGB(50, 50, 250));
 
 	g_DX9Right = new DX9Base;
 	g_DX9Right->CreateOnWindow(g_hChildR);
@@ -48,6 +55,10 @@ int main() {
 
 	g_ImgTile = new DX9Image;
 	g_ImgTile->Create(g_DX9Left->GetDevice());
+
+	g_ImgTileSel = new DX9Image;
+	g_ImgTileSel->Create(g_DX9Left->GetDevice());
+	g_ImgTileSel->SetTexture(L"tilesel32x32.png");
 
 	g_myMap = new DX9Map;
 	g_myMap->Create(g_DX9Right->GetDevice());
@@ -57,11 +68,13 @@ int main() {
 	g_DX9Left->Destroy();
 	g_DX9Right->Destroy();
 	g_ImgTile->Destroy();
+	g_ImgTileSel->Destroy();
 	g_myMap->Destroy();
 
 	delete g_DX9Left;
 	delete g_DX9Right;
 	delete g_ImgTile;
+	delete g_ImgTileSel;
 	delete g_myMap;
 }
 
@@ -69,6 +82,9 @@ int MainLoop() {
 	g_DX9Left->BeginRender();
 
 		g_ImgTile->Draw();
+
+		if (g_ImgTile->IsTextureLoaded())
+			g_ImgTileSel->Draw();
 
 	g_DX9Left->EndRender();
 
@@ -92,6 +108,8 @@ int HandleAccelAndMenu(WPARAM wParam) {
 			g_nTileWidth = 32;
 			g_nTileHeight = 32;
 			g_myMap->SetTileInfo(g_nTileWidth, g_nTileHeight);
+			g_nTileCols = (int)(g_ImgTile->GetWidth() / g_nTileWidth);
+			g_nTileRows = (int)(g_ImgTile->GetHeight() / g_nTileHeight);
 		}
 		break;
 	case ID_ACCELERATOR40007:
@@ -149,9 +167,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
 }
 
+int TileSetter(int MouseX, int MouseY) {
+	if ((g_nTileWidth) && (g_nTileHeight))
+	{
+		int tTileX = (int)(MouseX / g_nTileWidth);
+		int tTileY = (int)(MouseY / g_nTileHeight);
+
+		g_nCurrTileID = tTileX + (tTileY * g_nTileCols);
+		g_ImgTileSel->SetPosition(tTileX * g_nTileWidth, tTileY * g_nTileHeight);
+
+		std::cout << g_nCurrTileID << std::endl;
+
+		return 0;
+	}
+
+	return -1;
+}
+
 LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
 	g_myWND.BaseProc(hWnd, Message, wParam, lParam);
+
+	int tMouseX = LOWORD(lParam);
+	int tMouseY = HIWORD(lParam);
 
 	switch (Message)
 	{
@@ -168,18 +206,39 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			SendMessage(hWnd, WM_VSCROLL, SB_LINEDOWN, (LPARAM)g_hScrLV);
 		}
 		break;
+	case WM_LBUTTONDOWN:
+		g_TileMouseLBDown = true;
+		TileSetter(tMouseX, tMouseY);
+		break;
+	case WM_LBUTTONUP:
+		g_TileMouseLBDown = false;
+		break;
+	case WM_RBUTTONDOWN:
+		g_TileMouseRBDown = true;
+		break;
+	case WM_RBUTTONUP:
+		g_TileMouseRBDown = false;
+		break;
+	case WM_MOUSEMOVE:
+
+		break;
 	}
 	return(DefWindowProc(hWnd, Message, wParam, lParam));
 }
 
 int MapSetter(int TileID, int MouseX, int MouseY) {
-	int tMapX = (int)(MouseX / g_nTileWidth);
-	int tMapY = (int)(MouseY / g_nTileHeight);
+	if ((g_nTileWidth) && (g_nTileHeight))
+	{
+		int tMapX = (int)(MouseX / g_nTileWidth);
+		int tMapY = (int)(MouseY / g_nTileHeight);
 
-	g_myMap->SetMapFragment(TileID, tMapX, tMapY);
-	std::cout << tMapX << " / " << tMapY << std::endl;
+		g_myMap->SetMapFragment(TileID, tMapX, tMapY);
+		std::cout << tMapX << " / " << tMapY << std::endl;
+
+		return 0;
+	}
 	
-	return 0;
+	return -1;
 }
 
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
@@ -188,7 +247,7 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 	int tMouseX = LOWORD(lParam);
 	int tMouseY = HIWORD(lParam);
-
+	
 	switch (Message)
 	{
 	case WM_CREATE:
@@ -197,23 +256,23 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		HandleAccelAndMenu(wParam);
 		break;
 	case WM_LBUTTONDOWN:
-		g_MouseLBDown = true;
-		MapSetter(0, tMouseX, tMouseY);
+		g_MapMouseLBDown = true;
+		MapSetter(g_nCurrTileID, tMouseX, tMouseY);
 		break;
 	case WM_LBUTTONUP:
-		g_MouseLBDown = false;
+		g_MapMouseLBDown = false;
 		break;
 	case WM_RBUTTONDOWN:
-		g_MouseRBDown = true;
+		g_MapMouseRBDown = true;
 		MapSetter(-1, tMouseX, tMouseY);
 		break;
 	case WM_RBUTTONUP:
-		g_MouseRBDown = false;
+		g_MapMouseRBDown = false;
 		break;
 	case WM_MOUSEMOVE:
-		if (g_MouseLBDown)
-			MapSetter(0, tMouseX, tMouseY);
-		if (g_MouseRBDown)
+		if (g_MapMouseLBDown)
+			MapSetter(g_nCurrTileID, tMouseX, tMouseY);
+		if (g_MapMouseRBDown)
 			MapSetter(-1, tMouseX, tMouseY);
 		break;
 	}

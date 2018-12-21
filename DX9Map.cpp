@@ -143,8 +143,8 @@ int DX9Map::SetMapFragment(int TileID, int X, int Y) {
 		}
 		else
 		{
-			int TileX = (TileID % m_nTileRows);
-			int TileY = (TileID / m_nTileRows);
+			int TileX = (TileID % m_nTileCols);
+			int TileY = (TileID / m_nTileCols);
 
 			u1 = (float)(TileX * m_nWidth) / m_nTileSheetWidth;
 			u2 = u1 + (float)m_nWidth / m_nTileSheetWidth;

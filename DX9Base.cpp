@@ -93,7 +93,6 @@ HWND DX9Base::CreateWND(const wchar_t* Name,
 
 int DX9Base::SetBGColor(D3DCOLOR color) {
 	m_BGColor = color;
-
 	return 0;
 }
 

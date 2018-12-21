@@ -75,6 +75,10 @@ public:
 	int DX9Image::SetScale(float ScaleX, float ScaleY);
 	int DX9Image::SetTexture(std::wstring FileName);
 
+	// Getter
+	int DX9Image::GetWidth() { return m_nWidth;	};
+	int DX9Image::GetHeight() { return m_nHeight; };
+
 	// Asker
 	bool DX9Image::IsTextureLoaded();
 };
