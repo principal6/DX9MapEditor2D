@@ -75,6 +75,8 @@ public:
 	int DX9Image::SetPosition(float X, float Y);
 	int DX9Image::SetSize(int Width, int Height);
 	int DX9Image::SetScale(float ScaleX, float ScaleY);
+	int DX9Image::SetRange(float u1, float u2, float v1, float v2);
+	int DX9Image::SetAlpha(int Alpha);
 	int DX9Image::SetTexture(std::wstring FileName);
 
 	// Getter
