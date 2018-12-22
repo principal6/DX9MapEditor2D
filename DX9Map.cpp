@@ -26,6 +26,8 @@ int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev) {
 	m_nWidth = 32;
 	m_nHeight = 32;
 
+	m_bMapCreated = false;
+
 	return 0;
 }
 
@@ -82,13 +84,15 @@ int DX9Map::SetPosition(float OffsetX, float OffsetY) {
 	return 0;
 }
 
-int DX9Map::CreateMap(int MapCols, int MapRows) {
+int DX9Map::CreateMap(std::wstring Name, int MapCols, int MapRows) {
 	if (!m_nTileRows) // 타일이 아직 안 열림
 		return -1;
 
 	m_Vert.clear();
 	m_Ind.clear();
+	m_arrMap.clear();
 
+	m_strMapName = Name;
 	m_nMapCols = MapCols;
 	m_nMapRows = MapRows;
 
@@ -97,6 +101,7 @@ int DX9Map::CreateMap(int MapCols, int MapRows) {
 		for (int j = 0; j < MapCols; j++)
 		{
 			AddMapFragment(-1, j, i);
+			m_arrMap.push_back(-1);
 		}
 	}
 	AddEnd();
@@ -148,6 +153,7 @@ int DX9Map::AddEnd() {
 	DX9Image::CreateVB();
 	DX9Image::CreateIB();
 	DX9Image::UpdateVB();
+	m_bMapCreated = true;
 
 	return 0;
 }
@@ -155,7 +161,8 @@ int DX9Map::AddEnd() {
 int DX9Map::SetMapFragment(int TileID, int X, int Y) {
 	if ((X < m_nMapCols) && (Y < m_nMapRows))
 	{
-		int VertID0 = (X + (Y * m_nMapCols)) * 4;
+		int MapID = X + (Y * m_nMapCols);
+		int VertID0 = MapID * 4;
 
 		float u1;
 		float u2;
@@ -188,6 +195,8 @@ int DX9Map::SetMapFragment(int TileID, int X, int Y) {
 		m_Vert[VertID0 + 2].v = v2;
 		m_Vert[VertID0 + 3].u = u2;
 		m_Vert[VertID0 + 3].v = v2;
+
+		m_arrMap[MapID] = TileID;
 
 		UpdateVB();
 

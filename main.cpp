@@ -119,7 +119,8 @@ int MainLoop() {
 
 	g_DX9Right->BeginRender();
 
-		g_myMap->Draw();
+		if (g_myMap->IsMapCreated())
+			g_myMap->Draw();
 
 	g_DX9Right->EndRender();
 	return 0;
@@ -158,7 +159,12 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	case ID_FILE_SAVE:
 		if (g_myWND.SaveFileDlg(L"모든 파일\0*.*\0") == TRUE)
 		{
-			g_myWND.SaveFileText(g_myWND.GetDlgFileName());
+			// 맵 저장하기
+			if (g_myMap->IsMapCreated())
+			{
+
+				g_myWND.SaveFileText(g_myWND.GetDlgFileName());
+			}
 		}
 		break;
 	case ID_ACCELERATOR40011:
@@ -260,21 +266,21 @@ int AdjustScrollbars() {
 		int nTileRestCols = g_nTileCols - nCurrTileMaxCols;
 		nTileRestCols = max(0, nTileRestCols);
 		g_myWND.SetScrollbar(g_hScrLH, 0, nTileRestCols, g_nTileCols);
-	}
 
-	if (g_nMapCols)
-	{
-		GetClientRect(g_hChildR, &tRect);
+		if (g_nMapCols)
+		{
+			GetClientRect(g_hChildR, &tRect);
 
-		int nCurrMapMaxRows = (int)(tRect.bottom / g_nTileHeight);
-		int nMapRestRows = g_nMapRows - nCurrMapMaxRows;
-		nMapRestRows = max(0, nMapRestRows);
-		g_myWND.SetScrollbar(g_hScrRV, 0, nMapRestRows, g_nMapRows);
+			int nCurrMapMaxRows = (int)(tRect.bottom / g_nTileHeight);
+			int nMapRestRows = g_nMapRows - nCurrMapMaxRows;
+			nMapRestRows = max(0, nMapRestRows);
+			g_myWND.SetScrollbar(g_hScrRV, 0, nMapRestRows, g_nMapRows);
 
-		int nCurrMapMaxCols = (int)(tRect.right / g_nTileWidth);
-		int nMapRestCols = g_nMapCols - nCurrMapMaxCols;
-		nMapRestCols = max(0, nMapRestCols);
-		g_myWND.SetScrollbar(g_hScrRH, 0, nMapRestCols, g_nMapCols);
+			int nCurrMapMaxCols = (int)(tRect.right / g_nTileWidth);
+			int nMapRestCols = g_nMapCols - nCurrMapMaxCols;
+			nMapRestCols = max(0, nMapRestCols);
+			g_myWND.SetScrollbar(g_hScrRH, 0, nMapRestCols, g_nMapCols);
+		}
 	}
 
 	OnScrollbarChanged();
@@ -298,18 +304,18 @@ int OnScrollbarChanged() {
 		tOffsetX = (g_nCurrTileX - g_nLScrollXPos) * g_nTileWidth;
 		tOffsetY = (g_nCurrTileY - g_nLScrollYPos) * g_nTileHeight;
 		g_ImgTileSel->SetPosition((float)tOffsetX, (float)tOffsetY);
+
+		g_nRScrollXPos = GetScrollPos(g_hScrRH, SB_CTL);
+		g_nRScrollYPos = GetScrollPos(g_hScrRV, SB_CTL);
+
+		if (g_nMapCols)
+		{
+			tOffsetX = -g_nRScrollXPos * g_nTileWidth;
+			tOffsetY = -g_nRScrollYPos * g_nTileHeight;
+			g_myMap->SetPosition((float)tOffsetX, (float)tOffsetY);
+		}
 	}
 
-	g_nRScrollXPos = GetScrollPos(g_hScrRH, SB_CTL);
-	g_nRScrollYPos = GetScrollPos(g_hScrRV, SB_CTL);
-
-	if (g_nMapCols)
-	{
-		tOffsetX = -g_nRScrollXPos * g_nTileWidth;
-		tOffsetY = -g_nRScrollYPos * g_nTileHeight;
-		g_myMap->SetPosition((float)tOffsetX, (float)tOffsetY);
-	}
-	
 	return 0;
 }
 
@@ -449,7 +455,8 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
-	wchar_t tempStr[255] = { 0 };
+	wchar_t tempWC[255] = { 0 };
+	std::wstring tempStr;
 
 	switch (iMessage)
 	{
@@ -459,17 +466,32 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 		switch (wParam)
 		{
 		case IDOK:
-			GetDlgItemText(hDlg, IDC_EDIT1, tempStr, 255);
+			if (g_nTileWidth)
+			{
+				// 맵 만들기
+				GetDlgItemText(hDlg, IDC_EDIT1, tempWC, 255);
+				
+				g_nMapCols = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
+				g_nMapRows = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
 
-			// 맵 만들기
-			g_nMapCols = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
-			g_nMapRows = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
+				if (g_nMapCols && g_nMapRows)
+				{
+					g_myMap->CreateMap(tempWC, g_nMapCols, g_nMapRows);
 
-			if (g_nMapCols && g_nMapRows)
-				g_myMap->CreateMap(g_nMapCols, g_nMapRows);
+					tempStr = L"맵 이름 <";
+					tempStr += tempWC;
+					tempStr += L">  크기 <";
+					_itow_s(g_nMapCols, tempWC, 10);
+					tempStr += tempWC;
+					tempStr += L"x";
+					_itow_s(g_nMapRows, tempWC, 10);
+					tempStr += tempWC;
+					tempStr += L">";
+					SetWindowText(g_hWnd, tempStr.c_str());
 
-			AdjustScrollbars();
-
+					AdjustScrollbars();
+				}
+			}
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
 			break;

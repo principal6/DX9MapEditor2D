@@ -185,6 +185,11 @@ int JWWindow::SaveFileText(std::wstring FileName) {
 	return 0;
 }
 
+int JWWindow::SetFileText(std::wstring Text) {
+	m_FileText = Text;
+	return 0;
+}
+
 std::wstring JWWindow::GetDlgFileName() {
 	return m_FileName;
 }

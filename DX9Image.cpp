@@ -133,9 +133,9 @@ int DX9Image::SetTexture(std::wstring FileName) {
 
 	// 텍스처 불러오기
 	D3DXIMAGE_INFO tImgInfo;
-	if (D3DXCreateTextureFromFileEx(m_pDevice, NewFileName.c_str(), 0, 0, 0, 0,
+	if (FAILED(D3DXCreateTextureFromFileEx(m_pDevice, NewFileName.c_str(), 0, 0, 0, 0,
 		D3DFMT_UNKNOWN, D3DPOOL_MANAGED, D3DX_DEFAULT, D3DX_DEFAULT, 0,
-		&tImgInfo, NULL, &m_pTexture))
+		&tImgInfo, NULL, &m_pTexture)))
 		return -1;
 
 	m_nWidth = tImgInfo.Width;

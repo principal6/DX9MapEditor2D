@@ -13,6 +13,9 @@ private:
 	int	m_nTileSheetHeight;
 	int m_nMapCols;
 	int m_nMapRows;
+	std::wstring m_strMapName;
+	std::vector<int> m_arrMap;
+	bool m_bMapCreated;
 
 public:
 	DX9Map();
@@ -23,11 +26,12 @@ public:
 	int DX9Map::SetTexture(std::wstring FileName);
 	int DX9Map::SetTileInfo(int TileW, int TileH);
 	int DX9Map::SetPosition(float OffsetX, float OffsetY);
-	int DX9Map::CreateMap(int MapCols, int MapRows);
+	int DX9Map::CreateMap(std::wstring Name, int MapCols, int MapRows);
 	int DX9Map::AddMapFragment(int TileID, int X, int Y);
 	int DX9Map::AddEnd();
 	int DX9Map::SetMapFragment(int TileID, int X, int Y);
 	int DX9Map::Draw();
+	bool DX9Map::IsMapCreated() { return m_bMapCreated; };
 	// 나중에 LoadTileMap, DrawTileMap 추가하자!
 };
 
