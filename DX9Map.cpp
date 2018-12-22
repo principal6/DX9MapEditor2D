@@ -7,7 +7,7 @@ DX9Map::DX9Map() {
 	m_nTileSheetHeight = 0;
 }
 
-int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev) {
+int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev, std::wstring BaseDir) {
 	// 멤버 변수 초기화
 	m_pDevice = pD3DDev;
 
@@ -27,20 +27,18 @@ int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev) {
 	m_nHeight = 32;
 
 	m_bMapCreated = false;
+	m_strBaseDir = BaseDir;
 
 	return 0;
 }
 
 
 int DX9Map::Destroy() {
-	DX9Image::Destroy();
-	return 0;
+	return DX9Image::Destroy();
 }
 
 int DX9Map::SetTexture(std::wstring FileName) {
-	DX9Image::SetTexture(FileName);
-	
-	return 0;
+	return DX9Image::SetTexture(FileName);
 }
 
 int DX9Map::SetTileInfo(std::wstring Name, int TileW, int TileH) {
@@ -87,9 +85,6 @@ int DX9Map::SetPosition(float OffsetX, float OffsetY) {
 }
 
 int DX9Map::CreateMap(std::wstring Name, int MapCols, int MapRows) {
-	if (!m_nTileRows) // 타일이 아직 안 열림
-		return -1;
-
 	m_Vert.clear();
 	m_Ind.clear();
 	m_arrMap.clear();
@@ -111,6 +106,35 @@ int DX9Map::CreateMap(std::wstring Name, int MapCols, int MapRows) {
 	return 0;
 }
 
+int DX9Map::CreateMapWithData() {
+	m_Vert.clear();
+	m_Ind.clear();
+	m_arrMap.clear();
+
+	int tTileID = 0;
+
+	for (int i = 0; i < m_nMapRows; i++)
+	{
+		for (int j = 0; j < m_nMapCols; j++)
+		{
+			tTileID = _wtoi(m_strLoadedMapTiles.substr(0, 3).c_str());
+			if (tTileID == 999)
+				tTileID = -1;
+
+			AddMapFragment(tTileID, j, i);
+			m_arrMap.push_back(tTileID);
+
+			m_strLoadedMapTiles = m_strLoadedMapTiles.substr(3);
+		}
+		m_strLoadedMapTiles = m_strLoadedMapTiles.substr(1); // 개행문자 삭제★
+	}
+	m_strLoadedMapTiles.clear();
+
+	AddEnd();
+
+	return 0;
+}
+
 int DX9Map::AddMapFragment(int TileID, int X, int Y) {
 	float u1;
 	float u2;
@@ -126,8 +150,8 @@ int DX9Map::AddMapFragment(int TileID, int X, int Y) {
 	}
 	else
 	{
-		int TileX = (TileID % m_nTileRows);
-		int TileY = (TileID / m_nTileRows);
+		int TileX = (TileID % m_nTileCols);
+		int TileY = (TileID / m_nTileCols);
 
 		u1 = (float)(TileX * m_nWidth) / m_nTileSheetWidth;
 		u2 = u1 + (float)m_nWidth / m_nTileSheetWidth;
@@ -221,7 +245,7 @@ int DX9Map::GetMapDataPart(int DataID, wchar_t *WC, int size) {
 		tTileID = 999;
 
 	_itow_s(tTileID, tempWC, 10);
-	int tempLen = (int)wcslen(tempWC);
+	size_t tempLen = wcslen(tempWC);
 	switch (tempLen)
 	{
 	case 1:
@@ -275,8 +299,50 @@ int DX9Map::GetMapData(std::wstring *pStr) {
 
 int DX9Map::SetMapData(std::wstring Str) {
 
-	if (Str.find_first_of('#'))
-		int a = Str.npos;
+	size_t tFind = -1;
+	int tInt = 0;
 
+	tFind = Str.find_first_of('#');
+	if (tFind)
+	{
+		m_strMapName = Str.substr(0, tFind);
+		Str = Str.substr(tFind + 1);
+	}
+
+	tFind = Str.find_first_of('#');
+	if (tFind)
+	{
+		tInt = _wtoi(Str.substr(0, tFind).c_str());
+		m_nMapCols = tInt;
+		Str = Str.substr(tFind + 1);
+	}
+
+	tFind = Str.find_first_of('#');
+	if (tFind)
+	{
+		tInt = _wtoi(Str.substr(0, tFind).c_str());
+		m_nMapRows = tInt;
+		Str = Str.substr(tFind + 1);
+	}
+
+	tFind = Str.find_first_of('#');
+	if (tFind)
+	{
+		m_strTileName = Str.substr(0, tFind);
+		Str = Str.substr(tFind + 2);
+	}
+
+	m_strLoadedMapTiles = Str;
+
+	return 0;
+}
+
+int DX9Map::GetMapName(std::wstring *pStr) {
+	*pStr = m_strMapName;
+	return 0;
+}
+
+int DX9Map::GetTileName(std::wstring *pStr) {
+	*pStr = m_strTileName;
 	return 0;
 }

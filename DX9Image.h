@@ -43,6 +43,8 @@ protected:
 	std::vector<DX9INDEX>	m_Ind;
 	int						m_nIndCount;
 
+	std::wstring			m_strBaseDir;
+
 	float	m_fX;
 	float	m_fY;
 	float	m_fScaleX;
@@ -62,7 +64,7 @@ public:
 	DX9Image() {};
 	~DX9Image() {};
 
-	int DX9Image::Create(LPDIRECT3DDEVICE9 pD3DDev);
+	int DX9Image::Create(LPDIRECT3DDEVICE9 pD3DDev, std::wstring BaseDir);
 	int DX9Image::Destroy();
 	int DX9Image::Draw();
 

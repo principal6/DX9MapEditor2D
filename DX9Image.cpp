@@ -1,6 +1,6 @@
 #include "DX9Image.h"
 
-int DX9Image::Create(LPDIRECT3DDEVICE9 pD3DDev) {
+int DX9Image::Create(LPDIRECT3DDEVICE9 pD3DDev, std::wstring BaseDir) {
 	// 멤버 변수 초기화
 	m_pDevice = pD3DDev;
 
@@ -18,6 +18,8 @@ int DX9Image::Create(LPDIRECT3DDEVICE9 pD3DDev) {
 
 	m_nWidth = 10;
 	m_nHeight = 10;
+
+	m_strBaseDir = BaseDir;
 
 	// 정점 정보 대입, 버퍼 생성
 	m_nVertCount = 4;
@@ -124,12 +126,9 @@ int DX9Image::SetTexture(std::wstring FileName) {
 	}
 
 	std::wstring NewFileName;
-	NewFileName = FileName;
-	if (FileName.find(L'\\') == -1)
-	{
-		NewFileName = L"Data\\";
-		NewFileName += FileName;
-	}
+	NewFileName = m_strBaseDir;
+	NewFileName += L"\\Data\\";
+	NewFileName += FileName;
 
 	// 텍스처 불러오기
 	D3DXIMAGE_INFO tImgInfo;
