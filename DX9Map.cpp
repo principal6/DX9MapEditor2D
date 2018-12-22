@@ -43,7 +43,9 @@ int DX9Map::SetTexture(std::wstring FileName) {
 	return 0;
 }
 
-int DX9Map::SetTileInfo(int TileW, int TileH) {
+int DX9Map::SetTileInfo(std::wstring Name, int TileW, int TileH) {
+	m_strTileName = Name;
+
 	m_nTileSheetWidth = m_nWidth;
 	m_nTileSheetHeight = m_nHeight;
 
@@ -208,5 +210,73 @@ int DX9Map::SetMapFragment(int TileID, int X, int Y) {
 
 int DX9Map::Draw() {
 	DX9Image::Draw();
+	return 0;
+}
+
+int DX9Map::GetMapDataPart(int DataID, wchar_t *WC, int size) {
+	std::wstring tempStr;
+	wchar_t tempWC[255] = { 0 };
+	int tTileID = m_arrMap[DataID];
+	if (tTileID == -1)
+		tTileID = 999;
+
+	_itow_s(tTileID, tempWC, 10);
+	int tempLen = (int)wcslen(tempWC);
+	switch (tempLen)
+	{
+	case 1:
+		tempStr = L"00";
+		tempStr += tempWC;
+		break;
+	case 2:
+		tempStr = L"0";
+		tempStr += tempWC;
+		break;
+	default:
+		tempStr = tempWC;
+		break;
+	}
+
+	wcscpy_s(WC, size, tempStr.c_str());
+	return 0;
+}
+
+int DX9Map::GetMapData(std::wstring *pStr) {
+	wchar_t tempWC[255] = { 0 };
+	*pStr = m_strMapName;
+	*pStr += L'#';
+	_itow_s(m_nMapCols, tempWC, 10);
+	*pStr += tempWC;
+	*pStr += L'#';
+	_itow_s(m_nMapRows, tempWC, 10);
+	*pStr += tempWC;
+	*pStr += L'#';
+	*pStr += m_strTileName;
+	*pStr += L'#';
+	*pStr += L'\n';
+
+	
+	int tDataID = 0;
+	for (int i = 0; i < m_nMapRows; i++)
+	{
+		for (int j = 0; j < m_nMapCols; j++)
+		{
+			tDataID = j + (i * m_nMapCols);
+			GetMapDataPart(tDataID, tempWC, 255);
+			*pStr += tempWC;
+		}
+		// 마지막엔 \n 안 하기 위해!
+		if (i < m_nMapRows)
+			*pStr += L'\n';
+	}
+
+	return 0;
+}
+
+int DX9Map::SetMapData(std::wstring Str) {
+
+	if (Str.find_first_of('#'))
+		int a = Str.npos;
+
 	return 0;
 }

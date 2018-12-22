@@ -14,8 +14,12 @@ private:
 	int m_nMapCols;
 	int m_nMapRows;
 	std::wstring m_strMapName;
+	std::wstring m_strTileName;
 	std::vector<int> m_arrMap;
 	bool m_bMapCreated;
+
+private:
+	int DX9Map::GetMapDataPart(int DataID, wchar_t *WC, int size);
 
 public:
 	DX9Map();
@@ -24,7 +28,7 @@ public:
 	int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev);
 	int DX9Map::Destroy();
 	int DX9Map::SetTexture(std::wstring FileName);
-	int DX9Map::SetTileInfo(int TileW, int TileH);
+	int DX9Map::SetTileInfo(std::wstring Name, int TileW, int TileH);
 	int DX9Map::SetPosition(float OffsetX, float OffsetY);
 	int DX9Map::CreateMap(std::wstring Name, int MapCols, int MapRows);
 	int DX9Map::AddMapFragment(int TileID, int X, int Y);
@@ -32,7 +36,8 @@ public:
 	int DX9Map::SetMapFragment(int TileID, int X, int Y);
 	int DX9Map::Draw();
 	bool DX9Map::IsMapCreated() { return m_bMapCreated; };
-	// 나중에 LoadTileMap, DrawTileMap 추가하자!
+	int DX9Map::GetMapData(std::wstring *pStr);
+	int DX9Map::SetMapData(std::wstring Str);
 };
 
 

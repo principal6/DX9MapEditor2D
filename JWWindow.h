@@ -46,6 +46,7 @@ public:
 	BOOL JWWindow::SaveFileDlg(LPCWSTR Filter);
 	int JWWindow::SaveFileText(std::wstring FileName);
 	int JWWindow::SetFileText(std::wstring Text);
+	int JWWindow::GetFileText(std::wstring *Text);
 	std::wstring JWWindow::GetDlgFileName();
 	HINSTANCE JWWindow::GethInstance() { return m_hInst; };
 	HACCEL JWWindow::GethAccel() { return m_hAccel; };

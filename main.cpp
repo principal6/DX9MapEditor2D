@@ -3,6 +3,7 @@
 #include "DX9Image.h"
 #include "DX9Map.h"
 
+const wchar_t *g_Caption = L"DX9 2D 맵 에디터";
 JWWindow g_myWND;
 HWND g_hWnd;
 HWND g_hChildL;
@@ -27,6 +28,7 @@ int g_nTileXStart;
 int g_nTileYStart;
 
 // 타일 정보
+std::wstring g_strTileName;
 int g_nTileWidth = 0;
 int g_nTileHeight = 0;
 int g_nTileCols = 0;
@@ -64,7 +66,7 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 
 int main() {
 	JWWindow g_myWND;
-	g_hWnd = g_myWND.Create(L"Program", 50, 50, 800, 600, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
+	g_hWnd = g_myWND.Create(g_Caption, 50, 50, 800, 600, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
 	RECT tRect;
 	GetClientRect(g_hWnd, &tRect);
 	g_hChildL = g_myWND.AddChild(g_hWnd, L"ChL", 0, 0, g_WndSepX, tRect.bottom, RGB(230, 230, 230), WndProcL);
@@ -127,17 +129,24 @@ int MainLoop() {
 }
 
 int HandleAccelAndMenu(WPARAM wParam) {
+	std::wstring tStr;
+
 	switch (LOWORD(wParam)) { // wParam의 low word에 resource id값이 날라온다.
 	case ID_ACCELERATOR40016:
 	case ID_TILE_OPEN:
 		if (g_myWND.OpenFileDlg(L"모든 파일\0*.*\0") == TRUE)
 		{
 			// 타일 열기
+			g_strTileName = g_myWND.GetDlgFileName().c_str();
+			size_t tFind = g_strTileName.find_last_of('\\');
+			if (tFind)
+				g_strTileName = g_strTileName.substr(tFind + 1);
+
 			g_ImgTile->SetTexture(g_myWND.GetDlgFileName().c_str());
 			g_myMap->SetTexture(g_myWND.GetDlgFileName().c_str());
 			g_nTileWidth = 32;
 			g_nTileHeight = 32;
-			g_myMap->SetTileInfo(g_nTileWidth, g_nTileHeight);
+			g_myMap->SetTileInfo(g_strTileName, g_nTileWidth, g_nTileHeight);
 			g_nTileCols = (int)(g_ImgTile->GetWidth() / g_nTileWidth);
 			g_nTileRows = (int)(g_ImgTile->GetHeight() / g_nTileHeight);
 
@@ -153,6 +162,8 @@ int HandleAccelAndMenu(WPARAM wParam) {
 		if (g_myWND.OpenFileDlg(L"모든 파일\0*.*\0") == TRUE)
 		{
 			g_myWND.OpenFileText(g_myWND.GetDlgFileName());
+			g_myWND.GetFileText(&tStr);
+			g_myMap->SetMapData(tStr);
 		}
 		break;
 	case ID_ACCELERATOR40013:
@@ -162,7 +173,8 @@ int HandleAccelAndMenu(WPARAM wParam) {
 			// 맵 저장하기
 			if (g_myMap->IsMapCreated())
 			{
-
+				g_myMap->GetMapData(&tStr);
+				g_myWND.SetFileText(tStr);
 				g_myWND.SaveFileText(g_myWND.GetDlgFileName());
 			}
 		}
@@ -461,6 +473,7 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 	switch (iMessage)
 	{
 	case WM_INITDIALOG:
+		PostMessage(hDlg, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hDlg, IDC_EDIT1), TRUE);
 		return TRUE;
 	case WM_COMMAND:
 		switch (wParam)
@@ -478,9 +491,10 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 				{
 					g_myMap->CreateMap(tempWC, g_nMapCols, g_nMapRows);
 
-					tempStr = L"맵 이름 <";
+					tempStr = g_Caption;
+					tempStr += L" <맵 이름: ";
 					tempStr += tempWC;
-					tempStr += L">  크기 <";
+					tempStr += L"> <크기: ";
 					_itow_s(g_nMapCols, tempWC, 10);
 					tempStr += tempWC;
 					tempStr += L"x";

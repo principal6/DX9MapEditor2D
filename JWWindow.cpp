@@ -190,6 +190,11 @@ int JWWindow::SetFileText(std::wstring Text) {
 	return 0;
 }
 
+int JWWindow::GetFileText(std::wstring *Text) {
+	*Text = m_FileText;
+	return 0;
+}
+
 std::wstring JWWindow::GetDlgFileName() {
 	return m_FileName;
 }
