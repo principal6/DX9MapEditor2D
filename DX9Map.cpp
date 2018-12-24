@@ -121,15 +121,14 @@ int DX9Map::CreateMapWithData() {
 				tTileID = -1;
 			
 			// 수정 필!★
-			tMoveID = 0;
-			//tMoveID = _wtoi(m_strLoadedMapTiles.substr(MAX_TILEID_LEN, MAX_MOVEID_LEN).c_str());
+			tMoveID = _wtoi(m_strLoadedMapTiles.substr(MAX_TILEID_LEN, MAX_MOVEID_LEN).c_str());
 
 			AddMapFragmentTile(tTileID, j, i);
 			AddMapFragmentMove(tMoveID, j, i);
 			m_MapData.push_back(DXMAPDATA(tTileID, tMoveID));
 
 			m_strLoadedMapTiles = m_strLoadedMapTiles.substr(MAX_TILEID_LEN);
-			//m_strLoadedMapTiles = m_strLoadedMapTiles.substr(MAX_MOVEID_LEN);
+			m_strLoadedMapTiles = m_strLoadedMapTiles.substr(MAX_MOVEID_LEN);
 		}
 		m_strLoadedMapTiles = m_strLoadedMapTiles.substr(1); // 개행문자 삭제★
 	}
@@ -142,7 +141,6 @@ int DX9Map::CreateMapWithData() {
 }
 
 int DX9Map::SetPosition(float OffsetX, float OffsetY) {
-	
 	int VertID0 = 0;
 	float tX = 0.0f;
 	float tY = 0.0f;
@@ -204,8 +202,8 @@ DXUV DX9Map::ConvertIDtoUV(int ID, int SheetW, int SheetH) {
 	return Result;
 }
 
-int DX9Map::AddMapFragmentTile(int ID, int X, int Y) {
-	DXUV tUV = ConvertIDtoUV(ID, m_nTileSheetWidth, m_nTileSheetHeight);
+int DX9Map::AddMapFragmentTile(int TileID, int X, int Y) {
+	DXUV tUV = ConvertIDtoUV(TileID, m_nTileSheetWidth, m_nTileSheetHeight);
 	
 	DWORD Color = D3DCOLOR_ARGB(255, 255, 255, 255);
 	float tX = (float)(X * TILE_W);
@@ -224,8 +222,8 @@ int DX9Map::AddMapFragmentTile(int ID, int X, int Y) {
 	return 0;
 }
 
-int DX9Map::AddMapFragmentMove(int ID, int X, int Y) {
-	DXUV tUV = ConvertIDtoUV(ID, m_nTileSheetWidth, m_nTileSheetHeight);
+int DX9Map::AddMapFragmentMove(int MoveID, int X, int Y) {
+	DXUV tUV = ConvertIDtoUV(MoveID, m_nMoveSheetWidth, m_nMoveSheetHeight);
 
 	DWORD Color = D3DCOLOR_ARGB(MOVE_ALPHA, 255, 255, 255);
 	float tX = (float)(X * TILE_W);
@@ -377,12 +375,12 @@ int DX9Map::Draw() {
 int DX9Map::GetMapDataPart(int DataID, wchar_t *WC, int size) {
 	std::wstring tempStr;
 	wchar_t tempWC[255] = { 0 };
-	int tTileID = m_MapData[DataID].TileID;
-	if (tTileID == -1)
-		tTileID = 999;
 
+	int tTileID = m_MapData[DataID].TileID;
+	if (tTileID == -1) tTileID = 999;
 	_itow_s(tTileID, tempWC, 10);
 	size_t tempLen = wcslen(tempWC);
+
 	switch (tempLen)
 	{
 	case 1:
@@ -403,6 +401,7 @@ int DX9Map::GetMapDataPart(int DataID, wchar_t *WC, int size) {
 	int tMoveID = m_MapData[DataID].MoveID;
 	_itow_s(tMoveID, tempWC, 10);
 	tempLen = wcslen(tempWC);
+
 	switch (tempLen)
 	{
 	case 1:

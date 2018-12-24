@@ -6,7 +6,8 @@
 const wchar_t *g_Caption = L"DX9 2D 맵 에디터";
 const wchar_t *g_szHelp = L"DirectX 9 2D 게임을 위한 맵 에디터입니다. <개발자: 김장원>";
 const wchar_t *g_szMoveFN = L"move32x32.png";
-const int g_Alpha = 150;
+const int ALPHA_TILESEL = 150;
+const int WNDSEP_X = 224;
 
 JWWindow g_myWND;
 HWND g_hWnd;
@@ -16,7 +17,6 @@ HWND g_hScrLH;
 HWND g_hScrLV;
 HWND g_hScrRH;
 HWND g_hScrRV;
-int g_WndSepX = 224;
 DX9Base* g_DX9Left;
 DX9Base* g_DX9Right;
 DX9Image* g_ImgTile;
@@ -75,8 +75,8 @@ int main() {
 	g_hWnd = g_myWND.Create(g_Caption, 50, 50, 800, 600, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
 	RECT tRect;
 	GetClientRect(g_hWnd, &tRect);
-	g_hChildL = g_myWND.AddChild(g_hWnd, L"ChL", 0, 0, g_WndSepX, tRect.bottom, RGB(230, 230, 230), WndProcL);
-	g_hChildR = g_myWND.AddChild(g_hWnd, L"ChR", g_WndSepX, 0, tRect.right - g_WndSepX, tRect.bottom, RGB(150, 150, 150), WndProcR);
+	g_hChildL = g_myWND.AddChild(g_hWnd, L"ChL", 0, 0, WNDSEP_X, tRect.bottom, RGB(230, 230, 230), WndProcL);
+	g_hChildR = g_myWND.AddChild(g_hWnd, L"ChR", WNDSEP_X, 0, tRect.right - WNDSEP_X, tRect.bottom, RGB(150, 150, 150), WndProcR);
 	g_hScrLH = g_myWND.AddScrollbarH(g_hChildL, 0, 10);
 	g_hScrLV = g_myWND.AddScrollbarV(g_hChildL, 0, 10);
 	g_hScrRH = g_myWND.AddScrollbarH(g_hChildR, 0, 10);
@@ -92,7 +92,7 @@ int main() {
 	g_ImgTileSel = new DX9Image;
 	g_ImgTileSel->Create(g_DX9Left->GetDevice(), tBaseDir);
 	g_ImgTileSel->SetTexture(L"tilesel32x32.png");
-	g_ImgTileSel->SetAlpha(g_Alpha);
+	g_ImgTileSel->SetAlpha(ALPHA_TILESEL);
 
 	g_DX9Right = new DX9Base;
 	g_DX9Right->CreateOnWindow(g_hChildR);
@@ -104,7 +104,7 @@ int main() {
 
 	g_ImgMapSel = new DX9Image;
 	g_ImgMapSel->Create(g_DX9Right->GetDevice(), tBaseDir);
-	g_ImgMapSel->SetAlpha(g_Alpha);
+	g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
 
 	// 프로그램 실행
 	g_DX9Left->RunWithAccel(MainLoop, g_myWND.GethAccel());
@@ -152,7 +152,7 @@ int LoadTile(std::wstring TileName) {
 	g_ImgTile->SetTexture(TileName);
 	g_ImgMapSel->SetTexture(TileName);
 	g_ImgMapSel->SetSize(0, 0);
-	g_ImgMapSel->SetAlpha(g_Alpha);
+	g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
 
 	tTW = g_ImgTile->GetWidth();
 	tTH = g_ImgTile->GetHeight();
@@ -453,8 +453,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 	case WM_SIZE:
 		// 윈도우 크기 조절 시!
 		GetClientRect(hWnd, &tRect);
-		MoveWindow(g_hChildR, g_WndSepX, 0, tRect.right - g_WndSepX, tRect.bottom, TRUE);
-		MoveWindow(g_hChildL, 0, 0, g_WndSepX, tRect.bottom, TRUE);
+		MoveWindow(g_hChildR, WNDSEP_X, 0, tRect.right - WNDSEP_X, tRect.bottom, TRUE);
+		MoveWindow(g_hChildL, 0, 0, WNDSEP_X, tRect.bottom, TRUE);
 
 		if (g_DX9Left)
 			g_DX9Left->Resize(g_hChildL);
@@ -577,7 +577,7 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 			MapSetter(-1, tMouseX, tMouseY);
 		if (g_ImgMapSel)
 		{
-			g_ImgMapSel->SetAlpha(g_Alpha);
+			g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
 			tMapSelX = (float)((tMouseX / TILE_W) * TILE_W);
 			tMapSelY = (float)((tMouseY / TILE_H) * TILE_H);
 			g_ImgMapSel->SetPosition(tMapSelX, tMapSelY);
