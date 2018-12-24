@@ -6,6 +6,7 @@
 const wchar_t *g_Caption = L"DX9 2D 맵 에디터";
 const wchar_t *g_szHelp = L"DirectX 9 2D 게임을 위한 맵 에디터입니다. <개발자: 김장원>";
 const wchar_t *g_szMoveFN = L"move32x32.png";
+const wchar_t *g_szTileSelFN = L"tilesel32x32.png";
 const int ALPHA_TILESEL = 150;
 const int WNDSEP_X = 224;
 
@@ -40,6 +41,7 @@ DX9Image* g_ImgTile;
 DX9Image* g_ImgTileSel;
 DX9Map* g_DX9Map;
 DX9Image* g_ImgMapSel;
+DX9Image* g_ImgMapBG;
 
 // 맵, 타일 정보
 std::wstring g_strMapName;
@@ -95,7 +97,7 @@ int main() {
 
 	g_ImgTileSel = new DX9Image;
 	g_ImgTileSel->Create(g_DX9Left->GetDevice(), tBaseDir);
-	g_ImgTileSel->SetTexture(L"tilesel32x32.png");
+	g_ImgTileSel->SetTexture(g_szTileSelFN);
 	g_ImgTileSel->SetAlpha(ALPHA_TILESEL);
 
 	g_DX9Right = new DX9Base;
@@ -109,6 +111,10 @@ int main() {
 	g_ImgMapSel = new DX9Image;
 	g_ImgMapSel->Create(g_DX9Right->GetDevice(), tBaseDir);
 	g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
+
+	g_ImgMapBG = new DX9Image;
+	g_ImgMapBG->Create(g_DX9Right->GetDevice(), tBaseDir);
+	g_ImgMapBG->SetTexture(g_szTileSelFN);
 
 	// 프로그램 실행
 	g_DX9Left->RunWithAccel(MainLoop, g_myWND->GethAccel());
@@ -143,6 +149,9 @@ int MainLoop() {
 
 		if (g_DX9Map->IsMapCreated())
 		{
+			if (g_nMode == DX9MAPMODE::TileMode)
+				g_ImgMapBG->Draw();
+
 			g_DX9Map->Draw();
 			g_ImgMapSel->Draw();
 		}			
@@ -186,7 +195,10 @@ int HandleAccelAndMenu(WPARAM wParam) {
 			g_DX9Map->GetTileName(&g_strTileName);
 			g_DX9Map->GetMapName(&g_strMapName);
 			LoadTile(g_strTileName);
-
+			
+			int dd = g_DX9Map->GetWidth();
+			dd = g_DX9Map->GetHeight();
+			g_ImgMapBG->SetSize(g_DX9Map->GetWidth(), g_DX9Map->GetHeight());
 			UpdateWindowCaption(g_DX9Map->GetMapCols(), g_DX9Map->GetMapRows());
 			AdjustScrollbars();
 		}
@@ -435,6 +447,7 @@ int OnScrollbarChanged() {
 					tOffsetX = -g_nRScrollXPos * TILE_W;
 					tOffsetY = -g_nRScrollYPos * TILE_H;
 					g_DX9Map->SetPosition((float)tOffsetX, (float)tOffsetY);
+					g_ImgMapBG->SetPosition((float)tOffsetX, (float)tOffsetY);
 				}
 			}
 		}
@@ -642,6 +655,7 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 					// 맵 만들기
 					g_DX9Map->CreateMap(tWC, tMapCols, tMapRows);
 
+					g_ImgMapBG->SetSize(g_DX9Map->GetWidth(), g_DX9Map->GetHeight());
 					UpdateWindowCaption(tMapCols, tMapRows);
 					AdjustScrollbars();
 				}

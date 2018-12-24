@@ -216,14 +216,23 @@ DXUV DX9Map::ConvertIDtoUV(int ID, int SheetW, int SheetH) {
 int DX9Map::AddMapFragmentTile(int TileID, int X, int Y) {
 	DXUV tUV = ConvertIDtoUV(TileID, m_nTileSheetWidth, m_nTileSheetHeight);
 	
-	DWORD Color = D3DCOLOR_ARGB(255, 255, 255, 255);
+	DWORD tColor;
+	if (TileID == -1)
+	{
+		tColor = D3DCOLOR_ARGB(0, 255, 255, 255);
+	}
+	else
+	{
+		tColor = D3DCOLOR_ARGB(255, 255, 255, 255);
+	}
+	
 	float tX = (float)(X * TILE_W);
 	float tY = (float)(Y * TILE_H);
 
-	m_Vert.push_back(DX9VERTEX(tX, tY, 0, 1, Color, tUV.u1, tUV.v1));
-	m_Vert.push_back(DX9VERTEX(tX + TILE_W, tY, 0, 1, Color, tUV.u2, tUV.v1));
-	m_Vert.push_back(DX9VERTEX(tX, tY + TILE_H, 0, 1, Color, tUV.u1, tUV.v2));
-	m_Vert.push_back(DX9VERTEX(tX + TILE_W, tY + TILE_H, 0, 1, Color, tUV.u2, tUV.v2));
+	m_Vert.push_back(DX9VERTEX(tX, tY, 0, 1, tColor, tUV.u1, tUV.v1));
+	m_Vert.push_back(DX9VERTEX(tX + TILE_W, tY, 0, 1, tColor, tUV.u2, tUV.v1));
+	m_Vert.push_back(DX9VERTEX(tX, tY + TILE_H, 0, 1, tColor, tUV.u1, tUV.v2));
+	m_Vert.push_back(DX9VERTEX(tX + TILE_W, tY + TILE_H, 0, 1, tColor, tUV.u2, tUV.v2));
 	m_nVertCount = (int)m_Vert.size();
 
 	m_Ind.push_back(DX9INDEX(m_nVertCount - 4, m_nVertCount - 3, m_nVertCount - 1));
@@ -310,15 +319,28 @@ int DX9Map::SetMapFragmentTile(int TileID, int X, int Y) {
 		int VertID0 = MapID * 4;
 
 		DXUV tUV = ConvertIDtoUV(TileID, m_nTileSheetWidth, m_nTileSheetHeight);
+		DWORD tColor;
+		if (TileID == -1)
+		{
+			tColor = D3DCOLOR_ARGB(0, 255, 255, 255);
+		}
+		else
+		{
+			tColor = D3DCOLOR_ARGB(255, 255, 255, 255);
+		}
 
 		m_Vert[VertID0].u = tUV.u1;
 		m_Vert[VertID0].v = tUV.v1;
+		m_Vert[VertID0].color = tColor;
 		m_Vert[VertID0 + 1].u = tUV.u2;
 		m_Vert[VertID0 + 1].v = tUV.v1;
+		m_Vert[VertID0 + 1].color = tColor;
 		m_Vert[VertID0 + 2].u = tUV.u1;
 		m_Vert[VertID0 + 2].v = tUV.v2;
+		m_Vert[VertID0 + 2].color = tColor;
 		m_Vert[VertID0 + 3].u = tUV.u2;
 		m_Vert[VertID0 + 3].v = tUV.v2;
+		m_Vert[VertID0 + 3].color = tColor;
 
 		m_MapData[MapID].TileID = TileID;
 

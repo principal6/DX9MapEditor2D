@@ -95,6 +95,8 @@ public:
 	int DX9Map::GetTileName(std::wstring *pStr);
 	int DX9Map::GetMapCols() { return m_nMapCols; };
 	int DX9Map::GetMapRows() { return m_nMapRows; };
+	int DX9Map::GetWidth() { return (m_nMapCols * TILE_W); };
+	int DX9Map::GetHeight() { return (m_nMapRows * TILE_H); };
 };
 
 
