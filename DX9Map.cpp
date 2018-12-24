@@ -477,6 +477,29 @@ int DX9Map::GetMapData(std::wstring *pStr) {
 	return 0;
 }
 
+int DX9Map::LoadMapFromFile(std::wstring FileName) {
+	std::wifstream filein;
+	filein.open(FileName, std::wifstream::in);
+	if (!filein.is_open()) return -1;
+
+	std::wstring fileText;
+
+	wchar_t tempText[MAX_LINE_LEN];
+	fileText.clear();
+	while (!filein.eof()) {
+		filein.getline(tempText, MAX_LINE_LEN);
+		fileText += tempText;
+		fileText += '\n';
+	}
+	fileText = fileText.substr(0, fileText.size() - 1);
+
+	SetMapData(fileText);
+	SetTileTexture(m_strTileName);
+	CreateMapWithData();
+
+	return 0;
+}
+
 int DX9Map::SetMapData(std::wstring Str) {
 
 	size_t tFind = -1;

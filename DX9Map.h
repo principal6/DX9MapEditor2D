@@ -3,7 +3,10 @@
 #ifndef DX9MAP_H
 #define DX9MAP_H
 
+#include <fstream>
 #include "DX9Image.h"
+
+const int MAX_LINE_LEN = 1024;
 
 const int MAX_TILEID_LEN = 3;
 const int MAX_MOVEID_LEN = 2;
@@ -58,6 +61,7 @@ private:
 	int DX9Map::AddMapFragmentTile(int TileID, int X, int Y);
 	int DX9Map::AddMapFragmentMove(int MoveID, int X, int Y);
 	int DX9Map::AddEnd();
+	int DX9Map::SetMapData(std::wstring Str);
 
 public:
 	DX9Map();
@@ -83,8 +87,8 @@ public:
 	int DX9Map::SetPosition(float OffsetX, float OffsetY);
 
 	// Load & Save
+	int DX9Map::LoadMapFromFile(std::wstring FileName);
 	int DX9Map::GetMapData(std::wstring *pStr);
-	int DX9Map::SetMapData(std::wstring Str);
 
 	// Getter
 	int DX9Map::GetMapName(std::wstring *pStr);
