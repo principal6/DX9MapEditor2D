@@ -44,6 +44,7 @@ private:
 	std::wstring m_strLoadedMapTiles;
 	std::vector<DXMAPDATA> m_MapData;
 
+	bool m_bMoveTextureLoaded;
 	LPDIRECT3DTEXTURE9		m_pTextureMove;
 	LPDIRECT3DVERTEXBUFFER9 m_pVBMove;
 	std::vector<DX9VERTEX>	m_VertMove;

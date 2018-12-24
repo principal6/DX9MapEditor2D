@@ -27,6 +27,7 @@ int DX9Map::Create(LPDIRECT3DDEVICE9 pD3DDev, std::wstring BaseDir) {
 	m_nHeight = 0;
 
 	m_bMapCreated = false;
+	m_bMoveTextureLoaded = false;
 	m_strBaseDir = BaseDir;
 
 	return 0;
@@ -77,11 +78,14 @@ int DX9Map::SetMoveTexture(std::wstring FileName) {
 	m_nMoveSheetWidth = tImgInfo.Width;
 	m_nMoveSheetHeight = tImgInfo.Height;
 
+	m_bMoveTextureLoaded = true;
+
 	return 0;
 }
 
 int DX9Map::CreateMap(std::wstring Name, int MapCols, int MapRows) {
 	m_Vert.clear();
+	m_VertMove.clear();
 	m_Ind.clear();
 	m_MapData.clear();
 
@@ -105,6 +109,7 @@ int DX9Map::CreateMap(std::wstring Name, int MapCols, int MapRows) {
 
 int DX9Map::CreateMapWithData() {
 	m_Vert.clear();
+	m_VertMove.clear();
 	m_Ind.clear();
 	m_MapData.clear();
 
@@ -161,19 +166,25 @@ int DX9Map::SetPosition(float OffsetX, float OffsetY) {
 			m_Vert[VertID0 + 3].x = tX + TILE_W;
 			m_Vert[VertID0 + 3].y = tY + TILE_H;
 
-			m_VertMove[VertID0].x = tX;
-			m_VertMove[VertID0].y = tY;
-			m_VertMove[VertID0 + 1].x = tX + TILE_W;
-			m_VertMove[VertID0 + 1].y = tY;
-			m_VertMove[VertID0 + 2].x = tX;
-			m_VertMove[VertID0 + 2].y = tY + TILE_H;
-			m_VertMove[VertID0 + 3].x = tX + TILE_W;
-			m_VertMove[VertID0 + 3].y = tY + TILE_H;
+			if (m_bMoveTextureLoaded)
+			{
+				m_VertMove[VertID0].x = tX;
+				m_VertMove[VertID0].y = tY;
+				m_VertMove[VertID0 + 1].x = tX + TILE_W;
+				m_VertMove[VertID0 + 1].y = tY;
+				m_VertMove[VertID0 + 2].x = tX;
+				m_VertMove[VertID0 + 2].y = tY + TILE_H;
+				m_VertMove[VertID0 + 3].x = tX + TILE_W;
+				m_VertMove[VertID0 + 3].y = tY + TILE_H;
+			}
 		}
 	}
 
 	UpdateVB();
-	UpdateVBMove();
+	if (m_bMoveTextureLoaded)
+	{
+		UpdateVBMove();
+	}
 
 	return 0;
 }
@@ -223,19 +234,24 @@ int DX9Map::AddMapFragmentTile(int TileID, int X, int Y) {
 }
 
 int DX9Map::AddMapFragmentMove(int MoveID, int X, int Y) {
-	DXUV tUV = ConvertIDtoUV(MoveID, m_nMoveSheetWidth, m_nMoveSheetHeight);
+	if (m_nMoveSheetWidth && m_nMoveSheetHeight)
+	{
+		DXUV tUV = ConvertIDtoUV(MoveID, m_nMoveSheetWidth, m_nMoveSheetHeight);
 
-	DWORD Color = D3DCOLOR_ARGB(MOVE_ALPHA, 255, 255, 255);
-	float tX = (float)(X * TILE_W);
-	float tY = (float)(Y * TILE_H);
+		DWORD Color = D3DCOLOR_ARGB(MOVE_ALPHA, 255, 255, 255);
+		float tX = (float)(X * TILE_W);
+		float tY = (float)(Y * TILE_H);
 
-	m_VertMove.push_back(DX9VERTEX(tX, tY, 0, 1, Color, tUV.u1, tUV.v1));
-	m_VertMove.push_back(DX9VERTEX(tX + TILE_W, tY, 0, 1, Color, tUV.u2, tUV.v1));
-	m_VertMove.push_back(DX9VERTEX(tX, tY + TILE_H, 0, 1, Color, tUV.u1, tUV.v2));
-	m_VertMove.push_back(DX9VERTEX(tX + TILE_W, tY + TILE_H, 0, 1, Color, tUV.u2, tUV.v2));
-	m_nVertMoveCount = (int)m_VertMove.size();
+		m_VertMove.push_back(DX9VERTEX(tX, tY, 0, 1, Color, tUV.u1, tUV.v1));
+		m_VertMove.push_back(DX9VERTEX(tX + TILE_W, tY, 0, 1, Color, tUV.u2, tUV.v1));
+		m_VertMove.push_back(DX9VERTEX(tX, tY + TILE_H, 0, 1, Color, tUV.u1, tUV.v2));
+		m_VertMove.push_back(DX9VERTEX(tX + TILE_W, tY + TILE_H, 0, 1, Color, tUV.u2, tUV.v2));
+		m_nVertMoveCount = (int)m_VertMove.size();
 
-	return 0;
+		return 0;
+	}
+	
+	return -1;
 }
 
 int DX9Map::CreateVBMove() {
@@ -264,16 +280,27 @@ int DX9Map::AddEnd() {
 	DX9Image::CreateVB();
 	DX9Image::CreateIB();
 	DX9Image::UpdateVB();
-	CreateVBMove();
-	UpdateVBMove();
+
+	if (m_bMoveTextureLoaded)
+	{
+		CreateVBMove();
+		UpdateVBMove();
+	}
 	m_bMapCreated = true;
 
 	return 0;
 }
 
 int DX9Map::SetMode(DX9MAPMODE Mode) {
-	m_CurrMapMode = Mode;
-	return 0;
+	if (m_bMoveTextureLoaded)
+	{
+		m_CurrMapMode = Mode;
+		return 0;
+	}
+	
+	// SetMoveTexture()가 호출된 적이 없습니다.
+	assert(0);
+	return -1;
 }
 
 int DX9Map::SetMapFragmentTile(int TileID, int X, int Y) {
@@ -344,12 +371,12 @@ int DX9Map::Draw() {
 		m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 		m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
 		m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-	}
 
-	m_pDevice->SetStreamSource(0, m_pVB, 0, sizeof(DX9VERTEX));
-	m_pDevice->SetFVF(D3DFVF_TEXTURE);
-	m_pDevice->SetIndices(m_pIB);
-	m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_nVertCount, 0, m_nIndCount);
+		m_pDevice->SetStreamSource(0, m_pVB, 0, sizeof(DX9VERTEX));
+		m_pDevice->SetFVF(D3DFVF_TEXTURE);
+		m_pDevice->SetIndices(m_pIB);
+		m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_nVertCount, 0, m_nIndCount);
+	}
 
 	if (m_CurrMapMode == DX9MAPMODE::MoveMode)
 	{
@@ -361,12 +388,12 @@ int DX9Map::Draw() {
 			m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 			m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
 			m_pDevice->SetTextureStageState(0, D3DTSS_ALPHAOP, D3DTOP_MODULATE);
-		}
 
-		m_pDevice->SetStreamSource(0, m_pVBMove, 0, sizeof(DX9VERTEX));
-		m_pDevice->SetFVF(D3DFVF_TEXTURE);
-		m_pDevice->SetIndices(m_pIB);
-		m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_nVertMoveCount, 0, m_nIndCount);
+			m_pDevice->SetStreamSource(0, m_pVBMove, 0, sizeof(DX9VERTEX));
+			m_pDevice->SetFVF(D3DFVF_TEXTURE);
+			m_pDevice->SetIndices(m_pIB);
+			m_pDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, m_nVertMoveCount, 0, m_nIndCount);
+		}
 	}
 
 	return 0;

@@ -9,7 +9,8 @@ const wchar_t *g_szMoveFN = L"move32x32.png";
 const int ALPHA_TILESEL = 150;
 const int WNDSEP_X = 224;
 
-JWWindow g_myWND;
+// 윈도우
+JWWindow* g_myWND;
 HWND g_hWnd;
 HWND g_hChildL;
 HWND g_hChildR;
@@ -17,20 +18,28 @@ HWND g_hScrLH;
 HWND g_hScrLV;
 HWND g_hScrRH;
 HWND g_hScrRV;
+
+// 윈도우 - 스크롤바
+int g_nLScrollXPos;
+int g_nLScrollYPos;
+int g_nRScrollXPos;
+int g_nRScrollYPos;
+
+// 윈도우 - 마우스 정보
+bool g_MapMouseLBDown;
+bool g_MapMouseRBDown;
+bool g_TileMouseLBDown;
+bool g_TileMouseRBDown;
+int g_nMouseXStart;
+int g_nMouseYStart;
+
+// DX9
 DX9Base* g_DX9Left;
 DX9Base* g_DX9Right;
 DX9Image* g_ImgTile;
 DX9Image* g_ImgTileSel;
 DX9Map* g_DX9Map;
 DX9Image* g_ImgMapSel;
-
-// 마우스
-bool g_MapMouseLBDown;
-bool g_MapMouseRBDown;
-bool g_TileMouseLBDown;
-bool g_TileMouseRBDown;
-int g_nTileXStart;
-int g_nTileYStart;
 
 // 맵, 타일 정보
 std::wstring g_strMapName;
@@ -45,13 +54,7 @@ int g_nMSRangeX = 0;
 int g_nMSRangeY = 0;
 DX9MAPMODE g_nMode = DX9MAPMODE::TileMode;
 
-// 스크롤바
-int g_nLScrollXPos;
-int g_nLScrollYPos;
-int g_nRScrollXPos;
-int g_nRScrollYPos;
-
-
+// DX9 관련 함수
 int MapSetter(int ID, int MouseX, int MouseY);
 int TileSetter(int MouseX, int MouseY, int RangeX = 0, int RangeY = 0);
 int LoadTile(std::wstring TileName);
@@ -61,6 +64,7 @@ int MainLoop();
 int OnScrollbarChanged();
 int AdjustScrollbars();
 int HandleAccelAndMenu(WPARAM wParam);
+int UpdateWindowCaption(int MapCols, int MapRows);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
@@ -71,16 +75,16 @@ int main() {
 	wchar_t tBaseDir[255] = { 0 };
 	GetCurrentDirectory(255, tBaseDir);
 
-	JWWindow g_myWND;
-	g_hWnd = g_myWND.Create(g_Caption, 50, 50, 800, 600, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
+	g_myWND = new JWWindow;
+	g_hWnd = g_myWND->Create(g_Caption, 50, 50, 800, 600, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
 	RECT tRect;
 	GetClientRect(g_hWnd, &tRect);
-	g_hChildL = g_myWND.AddChild(g_hWnd, L"ChL", 0, 0, WNDSEP_X, tRect.bottom, RGB(230, 230, 230), WndProcL);
-	g_hChildR = g_myWND.AddChild(g_hWnd, L"ChR", WNDSEP_X, 0, tRect.right - WNDSEP_X, tRect.bottom, RGB(150, 150, 150), WndProcR);
-	g_hScrLH = g_myWND.AddScrollbarH(g_hChildL, 0, 10);
-	g_hScrLV = g_myWND.AddScrollbarV(g_hChildL, 0, 10);
-	g_hScrRH = g_myWND.AddScrollbarH(g_hChildR, 0, 10);
-	g_hScrRV = g_myWND.AddScrollbarV(g_hChildR, 0, 10);
+	g_hChildL = g_myWND->AddChild(g_hWnd, L"ChL", 0, 0, WNDSEP_X, tRect.bottom, RGB(230, 230, 230), WndProcL);
+	g_hChildR = g_myWND->AddChild(g_hWnd, L"ChR", WNDSEP_X, 0, tRect.right - WNDSEP_X, tRect.bottom, RGB(150, 150, 150), WndProcR);
+	g_hScrLH = g_myWND->AddScrollbarH(g_hChildL, 0, 10);
+	g_hScrLV = g_myWND->AddScrollbarV(g_hChildL, 0, 10);
+	g_hScrRH = g_myWND->AddScrollbarH(g_hChildR, 0, 10);
+	g_hScrRV = g_myWND->AddScrollbarV(g_hChildR, 0, 10);
 
 	g_DX9Left = new DX9Base;
 	g_DX9Left->CreateOnWindow(g_hChildL);
@@ -107,7 +111,7 @@ int main() {
 	g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
 
 	// 프로그램 실행
-	g_DX9Left->RunWithAccel(MainLoop, g_myWND.GethAccel());
+	g_DX9Left->RunWithAccel(MainLoop, g_myWND->GethAccel());
 
 	// 종료
 	g_DX9Left->Destroy();
@@ -170,15 +174,15 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	case ID_ACCELERATOR40007:
 	case ID_FILE_NEW:
 		// 맵 만들기
-		DialogBox(g_myWND.GethInstance(), MAKEINTRESOURCE(IDD_DIALOG1), g_hWnd, DlgProcNewMap);
+		DialogBox(g_myWND->GethInstance(), MAKEINTRESOURCE(IDD_DIALOG1), g_hWnd, DlgProcNewMap);
 		break;
 	case ID_ACCELERATOR40009:
 	case ID_FILE_OPEN:
 		// 맵 불러오기★
-		if (g_myWND.OpenFileDlg(L"맵 파일\0*.jwm\0") == TRUE)
+		if (g_myWND->OpenFileDlg(L"맵 파일\0*.jwm\0") == TRUE)
 		{
-			g_myWND.OpenFileText(g_myWND.GetDlgFileName());
-			g_myWND.GetFileText(&tStr);
+			g_myWND->OpenFileText(g_myWND->GetDlgFileName());
+			g_myWND->GetFileText(&tStr);
 
 			g_DX9Map->SetMapData(tStr);
 			g_DX9Map->GetTileName(&g_strTileName);
@@ -188,31 +192,20 @@ int HandleAccelAndMenu(WPARAM wParam) {
 			g_DX9Map->SetTileTexture(g_strTileName);
 			g_DX9Map->CreateMapWithData();
 
-			tStr = g_Caption;
-			tStr += L" <맵 이름: ";
-			tStr += g_strMapName;
-			tStr += L"> <크기: ";
-			_itow_s(g_DX9Map->GetMapCols(), tWC, 10);
-			tStr += tWC;
-			tStr += L"x";
-			_itow_s(g_DX9Map->GetMapRows(), tWC, 10);
-			tStr += tWC;
-			tStr += L">";
-			SetWindowText(g_hWnd, tStr.c_str());
-
+			UpdateWindowCaption(g_DX9Map->GetMapCols(), g_DX9Map->GetMapRows());
 			AdjustScrollbars();
 		}
 		break;
 	case ID_ACCELERATOR40013:
 	case ID_FILE_SAVE:
 		// 맵 저장하기
-		if (g_myWND.SaveFileDlg(L"모든 파일\0*.*\0") == TRUE)
+		if (g_myWND->SaveFileDlg(L"모든 파일\0*.*\0") == TRUE)
 		{
 			if (g_DX9Map->IsMapCreated())
 			{
 				g_DX9Map->GetMapData(&tStr);
-				g_myWND.SetFileText(tStr);
-				g_myWND.SaveFileText(g_myWND.GetDlgFileName());
+				g_myWND->SetFileText(tStr);
+				g_myWND->SaveFileText(g_myWND->GetDlgFileName());
 			}
 		}
 		break;
@@ -245,6 +238,25 @@ int HandleAccelAndMenu(WPARAM wParam) {
 		MessageBox(g_hWnd, g_szHelp, TEXT("프로그램 정보"), MB_OK);
 		break;
 	}
+
+	return 0;
+}
+
+int UpdateWindowCaption(int MapCols, int MapRows) {
+	std::wstring tStr;
+	wchar_t tWC[255] = { 0 };
+
+	tStr = g_Caption;
+	tStr += L" <맵 이름: ";
+	tStr += g_strMapName;
+	tStr += L"> <크기: ";
+	_itow_s(MapCols, tWC, 10);
+	tStr += tWC;
+	tStr += L"x";
+	_itow_s(MapRows, tWC, 10);
+	tStr += tWC;
+	tStr += L">";
+	SetWindowText(g_hWnd, tStr.c_str());
 
 	return 0;
 }
@@ -355,10 +367,10 @@ int MapSetter(int ID, int MouseX, int MouseY) {
 
 int AdjustScrollbars() {
 	RECT tRect;
-	g_myWND.MoveScrollbarH(g_hChildL, g_hScrLH);
-	g_myWND.MoveScrollbarV(g_hChildL, g_hScrLV);
-	g_myWND.MoveScrollbarH(g_hChildR, g_hScrRH);
-	g_myWND.MoveScrollbarV(g_hChildR, g_hScrRV);
+	g_myWND->MoveScrollbarH(g_hChildL, g_hScrLH);
+	g_myWND->MoveScrollbarV(g_hChildL, g_hScrLV);
+	g_myWND->MoveScrollbarH(g_hChildR, g_hScrRH);
+	g_myWND->MoveScrollbarV(g_hChildR, g_hScrRV);
 
 	if (g_DX9Map)
 	{
@@ -370,12 +382,12 @@ int AdjustScrollbars() {
 			int nCurrTileMaxRows = (int)(tRect.bottom / TILE_H);
 			int nTileRestRows = g_nTileRows - nCurrTileMaxRows;
 			nTileRestRows = max(0, nTileRestRows);
-			g_myWND.SetScrollbar(g_hScrLV, 0, nTileRestRows, g_nTileRows);
+			g_myWND->SetScrollbar(g_hScrLV, 0, nTileRestRows, g_nTileRows);
 
 			int nCurrTileMaxCols = (int)(tRect.right / TILE_W);
 			int nTileRestCols = g_nTileCols - nCurrTileMaxCols;
 			nTileRestCols = max(0, nTileRestCols);
-			g_myWND.SetScrollbar(g_hScrLH, 0, nTileRestCols, g_nTileCols);
+			g_myWND->SetScrollbar(g_hScrLH, 0, nTileRestCols, g_nTileCols);
 
 			// 맵
 			GetClientRect(g_hChildR, &tRect);
@@ -384,13 +396,13 @@ int AdjustScrollbars() {
 			int nMapRows = g_DX9Map->GetMapRows();
 			int nMapRestRows = nMapRows - nCurrMapMaxRows;
 			nMapRestRows = max(0, nMapRestRows);
-			g_myWND.SetScrollbar(g_hScrRV, 0, nMapRestRows, nMapRows);
+			g_myWND->SetScrollbar(g_hScrRV, 0, nMapRestRows, nMapRows);
 
 			int nCurrMapMaxCols = (int)(tRect.right / TILE_W);
 			int nMapCols = g_DX9Map->GetMapCols();
 			int nMapRestCols = nMapCols - nCurrMapMaxCols;
 			nMapRestCols = max(0, nMapRestCols);
-			g_myWND.SetScrollbar(g_hScrRH, 0, nMapRestCols, nMapCols);
+			g_myWND->SetScrollbar(g_hScrRH, 0, nMapRestCols, nMapCols);
 		}
 	}
 	
@@ -439,7 +451,7 @@ int OnScrollbarChanged() {
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	g_myWND.BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
+	g_myWND->BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
 
 	RECT tRect;
 	
@@ -471,7 +483,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	g_myWND.BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
+	g_myWND->BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
 
 	int tMouseX = LOWORD(lParam);
 	int tMouseY = HIWORD(lParam);
@@ -495,8 +507,8 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		g_bMultiSel = false;
 		g_TileMouseLBDown = true;
 		TileSetter(tMouseX, tMouseY);
-		g_nTileXStart = tMouseX;
-		g_nTileYStart = tMouseY;
+		g_nMouseXStart = tMouseX;
+		g_nMouseYStart = tMouseY;
 		break;
 	case WM_LBUTTONUP:
 		g_TileMouseLBDown = false;
@@ -515,10 +527,10 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				if (g_TileMouseLBDown)
 				{
 					// 타일 다중 선택
-					g_nMSRangeX = (int)((tMouseX - g_nTileXStart) / TILE_W) + 1;
-					g_nMSRangeY = (int)((tMouseY - g_nTileYStart) / TILE_H) + 1;
+					g_nMSRangeX = (int)((tMouseX - g_nMouseXStart) / TILE_W) + 1;
+					g_nMSRangeY = (int)((tMouseY - g_nMouseYStart) / TILE_H) + 1;
 
-					TileSetter(g_nTileXStart, g_nTileYStart, g_nMSRangeX, g_nMSRangeY);
+					TileSetter(g_nMouseXStart, g_nMouseYStart, g_nMSRangeX, g_nMSRangeY);
 				}
 			}
 		}
@@ -533,7 +545,7 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	g_myWND.BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
+	g_myWND->BaseProc(hWnd, Message, wParam, lParam, OnScrollbarChanged);
 
 	int tMouseX = LOWORD(lParam);
 	int tMouseY = HIWORD(lParam);
@@ -604,10 +616,10 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 		switch (wParam)
 		{
 		case IDC_BUTTON1:
-			if (g_myWND.OpenFileDlg(L"모든 파일\0*.*\0") == TRUE)
+			if (g_myWND->OpenFileDlg(L"모든 파일\0*.*\0") == TRUE)
 			{
 				// 타일 이름 얻기
-				g_strTileName = g_myWND.GetDlgFileName().c_str();
+				g_strTileName = g_myWND->GetDlgFileName().c_str();
 				tFind = g_strTileName.find_last_of('\\');
 				if (tFind)
 					g_strTileName = g_strTileName.substr(tFind + 1);
@@ -635,18 +647,7 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 					// 맵 만들기
 					g_DX9Map->CreateMap(tWC, tMapCols, tMapRows);
 
-					tStr = g_Caption;
-					tStr += L" <맵 이름: ";
-					tStr += g_strMapName;
-					tStr += L"> <크기: ";
-					_itow_s(tMapCols, tWC, 10);
-					tStr += tWC;
-					tStr += L"x";
-					_itow_s(tMapRows, tWC, 10);
-					tStr += tWC;
-					tStr += L">";
-					SetWindowText(g_hWnd, tStr.c_str());
-
+					UpdateWindowCaption(tMapCols, tMapRows);
 					AdjustScrollbars();
 				}
 			}
