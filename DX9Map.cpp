@@ -478,8 +478,13 @@ int DX9Map::GetMapData(std::wstring *pStr) {
 }
 
 int DX9Map::LoadMapFromFile(std::wstring FileName) {
+	std::wstring NewFileName;
+	NewFileName = m_strBaseDir;
+	NewFileName += L"\\Data\\";
+	NewFileName += FileName;
+
 	std::wifstream filein;
-	filein.open(FileName, std::wifstream::in);
+	filein.open(NewFileName, std::wifstream::in);
 	if (!filein.is_open()) return -1;
 
 	std::wstring fileText;

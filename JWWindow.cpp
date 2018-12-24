@@ -203,6 +203,16 @@ std::wstring JWWindow::GetDlgFileName() {
 	return m_FileName;
 }
 
+std::wstring JWWindow::GetDlgFileTitle() {
+	std::wstring tStr = m_FileName;
+	size_t tFind = 0;
+
+	tFind = tStr.find_last_of(L'\\');
+	tStr = tStr.substr(tFind + 1);
+	
+	return tStr;
+}
+
 int JWWindow::BaseProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam, ONSCROLLBARCHG pScrollbar) {
 	int tempScrPos;
 	int tempScrMin;

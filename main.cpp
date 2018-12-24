@@ -181,7 +181,7 @@ int HandleAccelAndMenu(WPARAM wParam) {
 		// ¸Ê ºÒ·¯¿À±â¡Ú
 		if (g_myWND->OpenFileDlg(L"¸Ê ÆÄÀÏ\0*.jwm\0") == TRUE)
 		{
-			g_DX9Map->LoadMapFromFile(g_myWND->GetDlgFileName());
+			g_DX9Map->LoadMapFromFile(g_myWND->GetDlgFileTitle());
 
 			g_DX9Map->GetTileName(&g_strTileName);
 			g_DX9Map->GetMapName(&g_strMapName);

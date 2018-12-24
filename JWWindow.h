@@ -48,6 +48,7 @@ public:
 	int JWWindow::SetFileText(std::wstring Text);
 	int JWWindow::GetFileText(std::wstring *Text);
 	std::wstring JWWindow::GetDlgFileName();
+	std::wstring JWWindow::GetDlgFileTitle();
 	HINSTANCE JWWindow::GethInstance() { return m_hInst; };
 	HACCEL JWWindow::GethAccel() { return m_hAccel; };
 
