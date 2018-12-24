@@ -169,6 +169,7 @@ int DX9Image::SetTexture(std::wstring FileName) {
 
 	m_nWidth = tImgInfo.Width;
 	m_nHeight = tImgInfo.Height;
+	
 	UpdateVertData();
 
 	return 0;
