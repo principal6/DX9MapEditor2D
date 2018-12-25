@@ -16,6 +16,13 @@ const int TILE_H = 32;
 
 const int MOVE_ALPHA = 100;
 
+enum class DXMAPDIR {
+	Up,
+	Down,
+	Left,
+	Right,
+};
+
 struct DXUV {
 	float u1;
 	float u2;
@@ -50,8 +57,11 @@ private:
 	bool m_bMoveTextureLoaded;
 	LPDIRECT3DTEXTURE9		m_pTextureMove;
 	LPDIRECT3DVERTEXBUFFER9 m_pVBMove;
-	std::vector<DX9VERTEX>	m_VertMove;
+	std::vector<DX9VERTEX_IMAGE>	m_VertMove;
 	int						m_nVertMoveCount;
+
+	float m_fOffsetX;
+	float m_fOffsetY;
 
 private:
 	int DX9Map::GetMapDataPart(int DataID, wchar_t *WC, int size);
@@ -62,6 +72,10 @@ private:
 	int DX9Map::AddMapFragmentMove(int MoveID, int X, int Y);
 	int DX9Map::AddEnd();
 	int DX9Map::SetMapData(std::wstring Str);
+
+	// Sprite Collision
+	float DX9Map::GetMapTileBoundary(int MapID, DXMAPDIR Dir);
+	bool DX9Map::IsMovableTile(int MapID, DXMAPDIR Dir);
 
 public:
 	DX9Map();
@@ -97,6 +111,14 @@ public:
 	int DX9Map::GetMapRows() { return m_nMapRows; };
 	int DX9Map::GetWidth() { return (m_nMapCols * TILE_W); };
 	int DX9Map::GetHeight() { return (m_nMapRows * TILE_H); };
+
+	// Converter
+	D3DXVECTOR2 DX9Map::ConvertScrPostoXY(D3DXVECTOR2 ScreenPos);
+	D3DXVECTOR2 DX9Map::ConvertIDtoXY(int MapID);
+	int DX9Map::ConvertXYtoID(D3DXVECTOR2 MapXY);
+
+	// Sprite Collision
+	D3DXVECTOR2 DX9Map::CheckSprCollision(D3DXVECTOR2 SprPos, D3DXVECTOR2 Velocity);
 };
 
 

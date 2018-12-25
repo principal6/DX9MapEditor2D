@@ -324,9 +324,10 @@ int MapSetter(int ID, int MouseX, int MouseY) {
 		int tMapX = (int)(MouseX / TILE_W) + g_nRScrollXPos;
 		int tMapY = (int)(MouseY / TILE_H) + g_nRScrollYPos;
 
+		int NewID = ID;
+
 		if (g_bMultiSel)
-		{
-			int NewID = ID;
+		{	
 			for (int i = 0; i < g_nMSRangeX; i++)
 			{
 				for (int j = 0; j < g_nMSRangeY; j++)
@@ -334,15 +335,20 @@ int MapSetter(int ID, int MouseX, int MouseY) {
 					switch (g_nMode)
 					{
 					case DX9MAPMODE::TileMode:
-						if (ID != -1)
+						if (NewID != -1)
 							NewID = ID + i + (j * g_nTileCols);
 
 						g_DX9Map->SetMapFragmentTile(NewID, tMapX + i, tMapY + j);
 						break;
 					case DX9MAPMODE::MoveMode:
-						if (ID != -1)
+						if (NewID == -1)
+						{
+							NewID = 0;
+						}
+						else
+						{
 							NewID = ID + i + (j * g_nTileCols);
-
+						}
 						g_DX9Map->SetMapFragmentMove(NewID, tMapX + i, tMapY + j);
 						break;
 					default:
@@ -356,10 +362,12 @@ int MapSetter(int ID, int MouseX, int MouseY) {
 			switch (g_nMode)
 			{
 			case DX9MAPMODE::TileMode:
-				g_DX9Map->SetMapFragmentTile(ID, tMapX, tMapY);
+				g_DX9Map->SetMapFragmentTile(NewID, tMapX, tMapY);
 				break;
 			case DX9MAPMODE::MoveMode:
-				g_DX9Map->SetMapFragmentMove(ID, tMapX, tMapY);
+				if (NewID == -1)
+					NewID = 0;
+				g_DX9Map->SetMapFragmentMove(NewID, tMapX, tMapY);
 				break;
 			default:
 				return -1;
