@@ -72,7 +72,8 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
 LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam);
 
-int main() {
+int main()
+{
 	// ÃÊ±âÈ­
 	wchar_t tBaseDir[255] = { 0 };
 	GetCurrentDirectory(255, tBaseDir);
@@ -135,7 +136,8 @@ int main() {
 	delete g_ImgMapSel;
 }
 
-int MainLoop() {
+int MainLoop()
+{
 	g_DX9Left->BeginRender();
 
 		g_ImgTile->Draw();
@@ -160,7 +162,8 @@ int MainLoop() {
 	return 0;
 }
 
-int LoadTile(std::wstring TileName) {
+int LoadTile(std::wstring TileName)
+{
 	int tTW, tTH;
 	g_ImgTile->SetTexture(TileName);
 	g_ImgMapSel->SetTexture(TileName);
@@ -175,7 +178,8 @@ int LoadTile(std::wstring TileName) {
 	return 0;
 }
 
-int HandleAccelAndMenu(WPARAM wParam) {
+int HandleAccelAndMenu(WPARAM wParam)
+{
 	std::wstring tStr;
 	wchar_t tWC[255] = { 0 };
 
@@ -249,7 +253,8 @@ int HandleAccelAndMenu(WPARAM wParam) {
 	return 0;
 }
 
-int UpdateWindowCaption(int MapCols, int MapRows) {
+int UpdateWindowCaption(int MapCols, int MapRows)
+{
 	std::wstring tStr;
 	wchar_t tWC[255] = { 0 };
 
@@ -268,7 +273,8 @@ int UpdateWindowCaption(int MapCols, int MapRows) {
 	return 0;
 }
 
-int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY) {
+int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY)
+{
 	if (g_ImgTile->IsTextureLoaded())
 	{
 		int tTileX = (int)(MouseX / TILE_W);
@@ -318,7 +324,8 @@ int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY) {
 	return -1;
 }
 
-int MapSetter(int ID, int MouseX, int MouseY) {
+int MapSetter(int ID, int MouseX, int MouseY)
+{
 	if (g_ImgTile->IsTextureLoaded())
 	{
 		int tMapX = (int)(MouseX / TILE_W) + g_nRScrollXPos;
@@ -380,7 +387,8 @@ int MapSetter(int ID, int MouseX, int MouseY) {
 	return -1;
 }
 
-int AdjustScrollbars() {
+int AdjustScrollbars()
+{
 	RECT tRect;
 	g_myWND->MoveScrollbarH(g_hChildL, g_hScrLH);
 	g_myWND->MoveScrollbarV(g_hChildL, g_hScrLV);
@@ -426,7 +434,8 @@ int AdjustScrollbars() {
 	return 0;
 }
 
-int OnScrollbarChanged() {
+int OnScrollbarChanged()
+{
 	g_nLScrollXPos = GetScrollPos(g_hScrLH, SB_CTL);
 	g_nLScrollYPos = GetScrollPos(g_hScrLV, SB_CTL);
 
