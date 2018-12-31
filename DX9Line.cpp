@@ -1,76 +1,78 @@
 #include "DX9Line.h"
 
-int DX9Line::Create(LPDIRECT3DDEVICE9 pD3DDev)
+// Static member declaration
+LPDIRECT3DDEVICE9 DX9Line::m_pDevice;
+
+void DX9Line::Create(LPDIRECT3DDEVICE9 pD3DDev)
 {
 	m_pDevice = pD3DDev;
 	m_pVB = nullptr;
 	m_pIB = nullptr;
-	m_Vert.clear();
-	m_Ind.clear();
-
-	return 0;
+	Clear();
 }
 
-int DX9Line::Destroy()
+void DX9Line::Clear()
 {
-	m_pDevice = nullptr; // DX9Base에서 생성했으므로 여기서는 참조 해제만 한다!
+	m_Vert.clear();
+	m_Ind.clear();
+	m_VertCount = 0;
+	m_IndCount = 0;
+}
+
+void DX9Line::CreateMax(LPDIRECT3DDEVICE9 pD3DDev)
+{
+	Create(pD3DDev);
+	CreateVBMax();
+	CreateIBMax();
+}
+
+void DX9Line::Destroy()
+{
+	m_pDevice = nullptr; // Just set to nullptr cuz it's newed in <DX9Base> class
 
 	m_Vert.clear();
 	m_Ind.clear();
 
-	if (m_pIB != nullptr)
+	if (m_pIB)
+	{
 		m_pIB->Release();
-
-	if (m_pVB != nullptr)
+		m_pIB = nullptr;
+	}
+		
+	if (m_pVB)
+	{
 		m_pVB->Release();
-
-	return 0;
+		m_pVB = nullptr;
+	}
 }
 
-int DX9Line::AddLine(D3DXVECTOR2 StartPos, D3DXVECTOR2 Length, DWORD Color)
+void DX9Line::AddLine(D3DXVECTOR2 StartPos, D3DXVECTOR2 Length, DWORD Color)
 {
-	// 정점 정보 대입, 버퍼 생성
-	m_Vert.push_back(DX9VERTEX_LINE(StartPos.x, StartPos.y, 0.0f, 1.0f, Color));
-	m_Vert.push_back(DX9VERTEX_LINE(StartPos.x + Length.x, StartPos.y + Length.y, 0.0f, 1.0f, Color));
-	m_nVertCount = (int)m_Vert.size();
+	m_Vert.push_back(DX9VERTEX_LINE(StartPos.x, StartPos.y, Color));
+	m_Vert.push_back(DX9VERTEX_LINE(StartPos.x + Length.x, StartPos.y + Length.y, Color));
+	m_VertCount = (int)m_Vert.size();
 
-	// 색인 정보 대입, 버퍼 생성
-	m_Ind.push_back(DX9INDEX2(m_nIndCount * 2, m_nIndCount * 2 + 1));
-	m_nIndCount = (int)m_Ind.size();
-	return 0;
+	m_Ind.push_back(DX9INDEX2(m_IndCount * 2, m_IndCount * 2 + 1));
+	m_IndCount = (int)m_Ind.size();
 }
 
-int DX9Line::AddBox(D3DXVECTOR2 StartPos, D3DXVECTOR2 Size, DWORD Color)
+void DX9Line::AddBox(D3DXVECTOR2 StartPos, D3DXVECTOR2 Size, DWORD Color)
 {
 	AddLine(StartPos, D3DXVECTOR2(Size.x, 0), Color);
 	AddLine(StartPos, D3DXVECTOR2(0, Size.y), Color);
 	AddLine(D3DXVECTOR2(StartPos.x + Size.x, StartPos.y), D3DXVECTOR2(0, Size.y), Color);
 	AddLine(D3DXVECTOR2(StartPos.x, StartPos.y + Size.y), D3DXVECTOR2(Size.x, 0), Color);
-	return 0;
 }
 
-int DX9Line::AddEnd()
+void DX9Line::AddEnd()
 {
 	CreateVB();
 	CreateIB();
 	UpdateVB();
-
-	m_VertBackup = m_Vert;
-	return 0;
+	UpdateIB();
 }
 
-int DX9Line::SetPositionOffset(D3DXVECTOR2 Offset)
-{
-	for (int i = 0; i < m_nVertCount; i++)
-	{
-		m_Vert[i].x = m_VertBackup[i].x + Offset.x;
-		m_Vert[i].y = m_VertBackup[i].y + Offset.y;
-	}
-	UpdateVB();
-	return 0;
-}
-
-int DX9Line::SetBoxPosition(D3DXVECTOR2 StartPos, D3DXVECTOR2 Size)
+void DX9Line::SetBoxPosition(D3DXVECTOR2 StartPos, D3DXVECTOR2 Size)
 {
 	m_Vert[0].x = StartPos.x;
 	m_Vert[0].y = StartPos.y;
@@ -93,10 +95,83 @@ int DX9Line::SetBoxPosition(D3DXVECTOR2 StartPos, D3DXVECTOR2 Size)
 	m_Vert[7].y = StartPos.y + Size.y;
 	
 	UpdateVB();
-	return 0;
 }
 
-int DX9Line::Draw()
+void DX9Line::CreateVB()
+{
+	if (m_pVB)
+	{
+		m_pVB->Release();
+		m_pVB = nullptr;
+	}
+	int rVertSize = sizeof(DX9VERTEX_LINE) * m_VertCount;
+	if (FAILED(m_pDevice->CreateVertexBuffer(rVertSize, 0, D3DFVF_TEXTURE, D3DPOOL_MANAGED, &m_pVB, nullptr)))
+		return;
+}
+
+void DX9Line::CreateIB()
+{
+	if (m_pIB)
+	{
+		m_pIB->Release();
+		m_pIB = nullptr;
+	}
+	int rIndSize = sizeof(DX9INDEX2) * m_IndCount;
+	if (FAILED(m_pDevice->CreateIndexBuffer(rIndSize, 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_pIB, nullptr)))
+		return;
+}
+
+void DX9Line::CreateVBMax()
+{
+	if (m_pVB)
+	{
+		m_pVB->Release();
+		m_pVB = nullptr;
+	}
+	int rVertSize = sizeof(DX9VERTEX_LINE) * MAX_UNIT_COUNT * 8;
+	if (FAILED(m_pDevice->CreateVertexBuffer(rVertSize, 0, D3DFVF_TEXTURE, D3DPOOL_MANAGED, &m_pVB, nullptr)))
+		return;
+}
+
+void DX9Line::CreateIBMax()
+{
+	if (m_pIB)
+	{
+		m_pIB->Release();
+		m_pIB = nullptr;
+	}
+	int rIndSize = sizeof(DX9INDEX2) * MAX_UNIT_COUNT * 4;
+	if (FAILED(m_pDevice->CreateIndexBuffer(rIndSize, 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_pIB, nullptr)))
+		return;
+}
+
+void DX9Line::UpdateVB()
+{
+	if (m_Vert.size() > 0)
+	{
+		int rVertSize = sizeof(DX9VERTEX_LINE) * m_VertCount;
+		VOID* pVertices;
+		if (FAILED(m_pVB->Lock(0, rVertSize, (void**)&pVertices, 0)))
+			return;
+		memcpy(pVertices, &m_Vert[0], rVertSize);
+		m_pVB->Unlock();
+	}
+}
+
+void DX9Line::UpdateIB()
+{
+	if (m_Ind.size() > 0)
+	{
+		int rIndSize = sizeof(DX9INDEX2) * m_IndCount;
+		VOID* pIndices;
+		if (FAILED(m_pIB->Lock(0, rIndSize, (void **)&pIndices, 0)))
+			return;
+		memcpy(pIndices, &m_Ind[0], rIndSize);
+		m_pIB->Unlock();
+	}
+}
+
+void DX9Line::Draw() const
 {
 	m_pDevice->SetRenderState(D3DRS_ALPHABLENDENABLE, false);
 	m_pDevice->SetTexture(0, nullptr);
@@ -104,45 +179,5 @@ int DX9Line::Draw()
 	m_pDevice->SetStreamSource(0, m_pVB, 0, sizeof(DX9VERTEX_LINE));
 	m_pDevice->SetFVF(D3DFVF_LINE);
 	m_pDevice->SetIndices(m_pIB);
-	m_pDevice->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, m_nVertCount, 0, m_nIndCount);
-
-	return 0;
-}
-
-int DX9Line::CreateVB()
-{
-	int rVertSize = sizeof(DX9VERTEX_LINE) * m_nVertCount;
-	if (FAILED(m_pDevice->CreateVertexBuffer(rVertSize, 0,
-		D3DFVF_TEXTURE, D3DPOOL_MANAGED, &m_pVB, nullptr)))
-	{
-		return -1;
-	}
-
-	return 0;
-}
-
-int DX9Line::CreateIB()
-{
-	int rIndSize = sizeof(DX9INDEX2) * m_nIndCount;
-	if (FAILED(m_pDevice->CreateIndexBuffer(rIndSize, 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_pIB, nullptr)))
-		return -1;
-	VOID* pIndices;
-	if (FAILED(m_pIB->Lock(0, rIndSize, (void **)&pIndices, 0)))
-		return -1;
-	memcpy(pIndices, &m_Ind[0], rIndSize);
-	m_pIB->Unlock();
-
-	return 0;
-}
-
-int DX9Line::UpdateVB()
-{
-	int rVertSize = sizeof(DX9VERTEX_LINE) * m_nVertCount;
-	VOID* pVertices;
-	if (FAILED(m_pVB->Lock(0, rVertSize, (void**)&pVertices, 0)))
-		return -1;
-	memcpy(pVertices, &m_Vert[0], rVertSize);
-	m_pVB->Unlock();
-
-	return 0;
+	m_pDevice->DrawIndexedPrimitive(D3DPT_LINELIST, 0, 0, m_VertCount, 0, m_IndCount);
 }

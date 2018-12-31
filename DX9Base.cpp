@@ -25,51 +25,48 @@ DX9Base::DX9Base()
 	m_BGColor = D3DCOLOR_XRGB(0, 0, 255);
 }
 
-int DX9Base::Create(CINT X, CINT Y, CINT Width, CINT Height)
+void DX9Base::Create(CINT X, CINT Y, CINT Width, CINT Height)
 {
-	COLORRGB rBGColor = COLORRGB(255, 0, 255);
+	COLOR_RGB rBGColor = COLOR_RGB(255, 0, 255);
 
-	if (CreateWND(L"Game", X, Y, Width, Height, DX9WINDOW_STYLE::OverlappedWindow, rBGColor)
-		== nullptr)
-		return -1;
+	if (CreateWND(L"Game", X, Y, Width, Height, DX9WINDOW_STYLE::OverlappedWindow, rBGColor) == nullptr)
+		return;
 
 	if (InitD3D() == -1)
-		return -1;
-
-	return 0;
+		return;
 }
 
-int DX9Base::CreateOnWindow(HWND hWnd)
+void DX9Base::CreateOnWindow(HWND hWnd)
 {
-	COLORRGB rBGColor = COLORRGB(255, 0, 255);
+	COLOR_RGB rBGColor = COLOR_RGB(255, 0, 255);
 
 	m_hWnd = hWnd;
 	m_hInstance = GetModuleHandle(nullptr);
 
 	if (InitD3D() == -1)
-		return -1;
-
-	return 0;
+		return;
 }
 
-int DX9Base::Destroy()
+void DX9Base::Destroy()
 {
 	if (m_pD3DDevice != nullptr)
+	{
 		m_pD3DDevice->Release();
+		m_pD3DDevice = nullptr;
+	}	
 
 	if (m_pD3D != nullptr)
+	{
 		m_pD3D->Release();
-
-	return 0;
+		m_pD3D = nullptr;
+	}
 }
 
 HWND DX9Base::CreateWND(const wchar_t* Name, CINT X, CINT Y, CINT Width, CINT Height,
-	DX9WINDOW_STYLE WindowStyle, COLORRGB BackColor)
+	DX9WINDOW_STYLE WindowStyle, COLOR_RGB BackColor)
 {
-	// 멤버 변수에 인스턴스 핸들 대입
 	m_hInstance = GetModuleHandle(nullptr);
 
-	// 윈도우 클래스 등록
 	WNDCLASS r_WndClass;
 	r_WndClass.cbClsExtra = 0;
 	r_WndClass.cbWndExtra = 0;
@@ -83,17 +80,12 @@ HWND DX9Base::CreateWND(const wchar_t* Name, CINT X, CINT Y, CINT Width, CINT He
 	r_WndClass.style = CS_HREDRAW | CS_VREDRAW;
 	RegisterClass(&r_WndClass);
 
-	// 윈도우 정확한 픽셀 크기로 맞추기
 	RECT rWndRect = { X, Y, X + Width, Y + Height };
 	AdjustWindowRect(&rWndRect, (DWORD)WindowStyle, false);
 
-	// 윈도우 생성
-	m_hWnd = CreateWindow(Name, Name, (DWORD)WindowStyle,
-		rWndRect.left, rWndRect.top,
-		rWndRect.right - rWndRect.left, rWndRect.bottom - rWndRect.top,
-		nullptr, (HMENU)nullptr, m_hInstance, nullptr);
+	m_hWnd = CreateWindow(Name, Name, (DWORD)WindowStyle, rWndRect.left, rWndRect.top,
+		rWndRect.right - rWndRect.left, rWndRect.bottom - rWndRect.top, nullptr, (HMENU)nullptr, m_hInstance, nullptr);
 
-	// 윈도우 표시
 	ShowWindow(m_hWnd, SW_SHOW);
 
 	UnregisterClass(Name, m_hInstance);
@@ -101,14 +93,12 @@ HWND DX9Base::CreateWND(const wchar_t* Name, CINT X, CINT Y, CINT Width, CINT He
 	return m_hWnd;
 }
 
-int DX9Base::SetBGColor(D3DCOLOR color)
+void DX9Base::SetBackgroundColor(D3DCOLOR color)
 {
 	m_BGColor = color;
-
-	return 0;
 }
 
-int DX9Base::Run(int(*pMainLoop)())
+void DX9Base::Run(int(*pMainLoop)())
 {
 	while (m_MSG.message != WM_QUIT)
 	{
@@ -122,8 +112,6 @@ int DX9Base::Run(int(*pMainLoop)())
 			pMainLoop();
 		}
 	}
-
-	return 0;
 }
 
 int DX9Base::RunWithAccel(int(*pMainLoop)(), HACCEL hAccel)
@@ -139,11 +127,9 @@ int DX9Base::RunWithAccel(int(*pMainLoop)(), HACCEL hAccel)
 	return (int)m_MSG.wParam;
 }
 
-int DX9Base::Halt()
+void DX9Base::Halt()
 {
 	DestroyWindow(m_hWnd);
-
-	return 0;
 }
 
 int DX9Base::InitD3D()
@@ -166,10 +152,10 @@ int DX9Base::InitD3D()
 	return 0;
 }
 
-int DX9Base::Resize(HWND hWnd)
+void DX9Base::Resize(HWND hWnd)
 {
 	if (!m_pD3DDevice)
-		return -1;
+		return;
 
 	D3DPRESENT_PARAMETERS D3DPP;
 	ZeroMemory(&D3DPP, sizeof(D3DPP));
@@ -179,24 +165,31 @@ int DX9Base::Resize(HWND hWnd)
 	D3DPP.hDeviceWindow = hWnd;
 
 	m_pD3DDevice->Reset(&D3DPP);
-
-	return 0;
 }
 
-int DX9Base::BeginRender()
+void DX9Base::BeginRender() const
 {
 	m_pD3DDevice->Clear(0, nullptr, D3DCLEAR_TARGET, m_BGColor, 1.0f, 0);
-
-	if (SUCCEEDED(m_pD3DDevice->BeginScene()))
-		return 0;
-
-	return -1;
+	m_pD3DDevice->BeginScene();
 }
 
-int DX9Base::EndRender()
+void DX9Base::EndRender() const
 {
 	m_pD3DDevice->EndScene();
 	m_pD3DDevice->Present(nullptr, nullptr, nullptr, nullptr);
+}
 
-	return 0;
+LPDIRECT3DDEVICE9 DX9Base::GetDevice() const
+{
+	return m_pD3DDevice;
+}
+
+HINSTANCE DX9Base::GetInstance() const
+{ 
+	return m_hInstance;
+}
+
+HWND DX9Base::GetHWND() const
+{ 
+	return m_hWnd;
 }

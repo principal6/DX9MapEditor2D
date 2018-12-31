@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="DX9Base.cpp" />
     <ClCompile Include="DX9Image.cpp" />
+    <ClCompile Include="DX9Line.cpp" />
     <ClCompile Include="DX9Map.cpp" />
     <ClCompile Include="JWWindow.cpp" />
     <ClCompile Include="main.cpp" />
@@ -169,6 +170,7 @@
     <ClInclude Include="DX9Base.h" />
     <ClInclude Include="DX9Common.h" />
     <ClInclude Include="DX9Image.h" />
+    <ClInclude Include="DX9Line.h" />
     <ClInclude Include="DX9Map.h" />
     <ClInclude Include="JWWindow.h" />
     <ClInclude Include="resource.h" />
