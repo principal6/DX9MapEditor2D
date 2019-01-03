@@ -1,7 +1,9 @@
+#include "Core/DX9Image.h"
 #include "JWWindow.h"
 #include "DX9Base.h"
-#include "DX9Image.h"
+#include "DX9BaseME.h"
 #include "DX9Map.h"
+#include "DX9MapEditor.h"
 
 const wchar_t *g_Caption = L"DX9 2D 맵 에디터";
 const wchar_t *g_szHelp = L"DirectX 9 2D 게임을 위한 맵 에디터입니다. <개발자: 김장원>";
@@ -11,6 +13,8 @@ const int ALPHA_TILESEL = 150;
 const int WNDSEP_X = 224;
 const int WINDOW_W = 800;
 const int WINDOW_H = 600;
+const int TILE_W = 32;
+const int TILE_H = 32;
 
 JWWindow* g_myWND;
 HWND g_hWnd;
@@ -33,8 +37,8 @@ bool g_TileMouseRBDown;
 int g_nMouseXStart;
 int g_nMouseYStart;
 
-DX9Base* g_DX9Left;
-DX9Base* g_DX9Right;
+DX9BaseME* g_DX9Left;
+DX9BaseME* g_DX9Right;
 DX9Image* g_ImgTile;
 DX9Image* g_ImgTileSel;
 DX9Map* g_DX9Map;
@@ -51,15 +55,14 @@ int g_nCurrTileY = 0;
 bool g_bMultiSel = false;
 int g_nMSRangeX = 0;
 int g_nMSRangeY = 0;
-DX9MAPMODE g_nMode = DX9MAPMODE::TileMode;
-
+DX9Common::MapMode g_nMode = DX9Common::MapMode::TileMode;
 
 int MapSetter(int ID, int MouseX, int MouseY);
 int TileSetter(int MouseX, int MouseY, int RangeX = 0, int RangeY = 0);
 int LoadTile(std::wstring TileName);
 void SetToTileMode();
 void SetToMoveMode();
-int MainLoop();
+void MainLoop();
 int OnScrollbarChanged();
 int AdjustScrollbars();
 int HandleAccelAndMenu(WPARAM wParam);
@@ -71,9 +74,8 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 
 int main()
 {
-	// 초기화
-	wchar_t tBaseDir[255] = { 0 };
-	GetCurrentDirectory(255, tBaseDir);
+	DX9MapEditor myEditor;
+	myEditor.Create(WINDOW_W, WINDOW_H);
 
 	g_myWND = new JWWindow;
 	g_hWnd = g_myWND->Create(g_Caption, 50, 50, WINDOW_W, WINDOW_H, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
@@ -86,12 +88,11 @@ int main()
 	g_hScrRH = g_myWND->AddScrollbarH(g_hChildR, 0, 10);
 	g_hScrRV = g_myWND->AddScrollbarV(g_hChildR, 0, 10);
 
-	g_DX9Left = new DX9Base;
+	g_DX9Left = new DX9BaseME;
 	g_DX9Left->CreateOnWindow(g_hChildL);
-	g_DX9Left->SetBackgroundColor(D3DCOLOR_XRGB(50, 50, 250));
+	g_DX9Left->SetBackgroundColor(D3DCOLOR_XRGB(150, 50, 250));
 
 	g_ImgTile = new DX9Image;
-	g_ImgTile->SetStaticMembers(tBaseDir, WINDOW_W, WINDOW_H);
 	g_ImgTile->Create(g_DX9Left->GetDevice());
 	g_ImgTile->SetSize(0, 0);
 
@@ -100,12 +101,12 @@ int main()
 	g_ImgTileSel->SetTexture(g_szTileSelFN);
 	g_ImgTileSel->SetAlpha(ALPHA_TILESEL);
 
-	g_DX9Right = new DX9Base;
+	g_DX9Right = new DX9BaseME;
 	g_DX9Right->CreateOnWindow(g_hChildR);
 	g_DX9Right->SetBackgroundColor(D3DCOLOR_XRGB(50, 50, 50));
 
 	g_DX9Map = new DX9Map;
-	g_DX9Map->Create(g_DX9Right->GetDevice(), WINDOW_H);
+	g_DX9Map->Create(g_DX9Right->GetDevice());
 	g_DX9Map->SetMoveTexture(g_szMoveFN);
 
 	g_ImgMapSel = new DX9Image;
@@ -117,7 +118,8 @@ int main()
 	g_ImgMapBG->SetTexture(g_szTileSelFN);
 
 	// 프로그램 실행
-	g_DX9Left->RunWithAccel(MainLoop, g_myWND->GethAccel());
+	g_DX9Left->SetMainLoop(MainLoop);
+	g_DX9Left->RunWithAccel(g_myWND->GethAccel());
 
 	// 종료
 	g_DX9Left->Destroy();
@@ -137,7 +139,7 @@ int main()
 	return 0;
 }
 
-int MainLoop()
+void MainLoop()
 {
 	g_DX9Left->BeginRender();
 
@@ -152,7 +154,7 @@ int MainLoop()
 
 		if (g_DX9Map->IsMapCreated())
 		{
-			if (g_nMode == DX9MAPMODE::TileMode)
+			if (g_nMode == DX9Common::MapMode::TileMode)
 				g_ImgMapBG->Draw();
 
 			g_DX9Map->Draw();
@@ -160,7 +162,7 @@ int MainLoop()
 		}			
 
 	g_DX9Right->EndRender();
-	return 0;
+	return;
 }
 
 int LoadTile(std::wstring TileName)
@@ -181,9 +183,9 @@ int LoadTile(std::wstring TileName)
 
 void SetToTileMode()
 {
-	if ((g_DX9Map->IsMapCreated()) && (g_nMode != DX9MAPMODE::TileMode))
+	if ((g_DX9Map->IsMapCreated()) && (g_nMode != DX9Common::MapMode::TileMode))
 	{
-		g_nMode = DX9MAPMODE::TileMode;
+		g_nMode = DX9Common::MapMode::TileMode;
 		LoadTile(g_strTileName);
 		g_DX9Map->SetMode(g_nMode);
 		AdjustScrollbars();
@@ -193,9 +195,9 @@ void SetToTileMode()
 
 void SetToMoveMode()
 {
-	if ((g_DX9Map->IsMapCreated()) && (g_nMode != DX9MAPMODE::MoveMode))
+	if ((g_DX9Map->IsMapCreated()) && (g_nMode != DX9Common::MapMode::MoveMode))
 	{
-		g_nMode = DX9MAPMODE::MoveMode;
+		g_nMode = DX9Common::MapMode::MoveMode;
 		LoadTile(g_szMoveFN);
 		g_DX9Map->SetMode(g_nMode);
 		AdjustScrollbars();
@@ -353,13 +355,13 @@ int MapSetter(int ID, int MouseX, int MouseY)
 				{
 					switch (g_nMode)
 					{
-					case DX9MAPMODE::TileMode:
+					case DX9Common::MapMode::TileMode:
 						if (NewID != -1)
 							NewID = ID + i + (j * g_nTileCols);
 
 						g_DX9Map->SetMapFragmentTile(NewID, tMapX + i, tMapY + j);
 						break;
-					case DX9MAPMODE::MoveMode:
+					case DX9Common::MapMode::MoveMode:
 						if (NewID == -1)
 						{
 							NewID = 0;
@@ -380,10 +382,10 @@ int MapSetter(int ID, int MouseX, int MouseY)
 		{
 			switch (g_nMode)
 			{
-			case DX9MAPMODE::TileMode:
+			case DX9Common::MapMode::TileMode:
 				g_DX9Map->SetMapFragmentTile(NewID, tMapX, tMapY);
 				break;
-			case DX9MAPMODE::MoveMode:
+			case DX9Common::MapMode::MoveMode:
 				if (NewID == -1)
 					NewID = 0;
 				g_DX9Map->SetMapFragmentMove(NewID, tMapX, tMapY);

@@ -25,20 +25,23 @@ DX9Base::DX9Base()
 	m_BGColor = D3DCOLOR_XRGB(0, 0, 255);
 }
 
-void DX9Base::Create(CINT X, CINT Y, CINT Width, CINT Height)
+DX9Common::ReturnValue DX9Base::Create(CINT X, CINT Y)
 {
-	COLOR_RGB rBGColor = COLOR_RGB(255, 0, 255);
+	RGBInt rBGColor = RGBInt(255, 0, 255);
 
-	if (CreateWND(L"Game", X, Y, Width, Height, DX9WINDOW_STYLE::OverlappedWindow, rBGColor) == nullptr)
-		return;
+	if (CreateWND(L"Game", X, Y, m_WindowData.WindowWidth, m_WindowData.WindowHeight, WindowStyle::OverlappedWindow, rBGColor)
+		== nullptr)
+		return ReturnValue::WINDOW_NOT_CREATED;
 
 	if (InitD3D() == -1)
-		return;
+		return ReturnValue::DIRECTX_NOT_CREATED;
+
+	return ReturnValue::OK;
 }
 
 void DX9Base::CreateOnWindow(HWND hWnd)
 {
-	COLOR_RGB rBGColor = COLOR_RGB(255, 0, 255);
+	RGBInt rBGColor = RGBInt(255, 0, 255);
 
 	m_hWnd = hWnd;
 	m_hInstance = GetModuleHandle(nullptr);
@@ -63,14 +66,14 @@ void DX9Base::Destroy()
 }
 
 HWND DX9Base::CreateWND(const wchar_t* Name, CINT X, CINT Y, CINT Width, CINT Height,
-	DX9WINDOW_STYLE WindowStyle, COLOR_RGB BackColor)
+	WindowStyle WindowStyle, RGBInt BackColor)
 {
 	m_hInstance = GetModuleHandle(nullptr);
 
 	WNDCLASS r_WndClass;
 	r_WndClass.cbClsExtra = 0;
 	r_WndClass.cbWndExtra = 0;
-	r_WndClass.hbrBackground = CreateSolidBrush(RGB(BackColor.r, BackColor.g, BackColor.b));
+	r_WndClass.hbrBackground = CreateSolidBrush(RGB(BackColor.Red, BackColor.Green, BackColor.Blue));
 	r_WndClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	r_WndClass.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
 	r_WndClass.hInstance = m_hInstance;
@@ -98,36 +101,7 @@ void DX9Base::SetBackgroundColor(D3DCOLOR color)
 	m_BGColor = color;
 }
 
-void DX9Base::Run(int(*pMainLoop)())
-{
-	while (m_MSG.message != WM_QUIT)
-	{
-		if (PeekMessage(&m_MSG, nullptr, 0U, 0U, PM_REMOVE))
-		{
-			TranslateMessage(&m_MSG);
-			DispatchMessage(&m_MSG);
-		}
-		else
-		{
-			pMainLoop();
-		}
-	}
-}
-
-int DX9Base::RunWithAccel(int(*pMainLoop)(), HACCEL hAccel)
-{
-	while (GetMessage(&m_MSG, 0, 0, 0)) {
-		if (!TranslateAccelerator(m_hWnd, hAccel, &m_MSG)) {
-			TranslateMessage(&m_MSG);
-			DispatchMessage(&m_MSG);
-			pMainLoop();
-		}
-	}
-
-	return (int)m_MSG.wParam;
-}
-
-void DX9Base::Halt()
+void DX9Base::Shutdown()
 {
 	DestroyWindow(m_hWnd);
 }
@@ -182,14 +156,4 @@ void DX9Base::EndRender() const
 LPDIRECT3DDEVICE9 DX9Base::GetDevice() const
 {
 	return m_pD3DDevice;
-}
-
-HINSTANCE DX9Base::GetInstance() const
-{ 
-	return m_hInstance;
-}
-
-HWND DX9Base::GetHWND() const
-{ 
-	return m_hWnd;
 }

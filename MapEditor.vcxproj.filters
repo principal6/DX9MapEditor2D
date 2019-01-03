@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{98cc8049-4169-4e45-9d2b-f9bbc6f8b4bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,13 +27,22 @@
     <ClCompile Include="DX9Base.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="DX9Image.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="DX9Map.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="DX9Line.cpp">
+    <ClCompile Include="Core\DX9Common.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\DX9Image.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\DX9Line.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="DX9BaseME.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DX9MapEditor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,16 +56,22 @@
     <ClInclude Include="DX9Base.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="DX9Common.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="DX9Image.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="DX9Map.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="DX9Line.h">
+    <ClInclude Include="Core\DX9Common.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\DX9Image.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\DX9Line.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="DX9BaseME.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="DX9MapEditor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
