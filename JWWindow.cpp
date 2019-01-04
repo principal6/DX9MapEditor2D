@@ -119,9 +119,10 @@ int JWWindow::SetScrollbar(HWND hWnd, int Min, int Max, int TotalMax) {
 	if (Max == TotalMax)
 		Max--; // Avoid division by 0
 
-	tInfo.nPage = (int)(TotalMax / (TotalMax - Max));
+	tInfo.nPage = static_cast<int>(TotalMax / (TotalMax - Max));
+
 	tInfo.nMin = Min;
-	tInfo.nMax = Max;
+	tInfo.nMax = Max + tInfo.nPage - 1;
 	SetScrollInfo(hWnd, SB_CTL, &tInfo, TRUE);
 	return 0;
 }

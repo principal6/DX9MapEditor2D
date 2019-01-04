@@ -5,16 +5,15 @@
 #include "DX9Map.h"
 #include "DX9MapEditor.h"
 
-const wchar_t *g_Caption = L"DX9 2D 맵 에디터";
+const wchar_t *g_szCaption = L"DX9 2D 맵 에디터";
 const wchar_t *g_szHelp = L"DirectX 9 2D 게임을 위한 맵 에디터입니다. <개발자: 김장원>";
-const wchar_t *g_szMoveFN = L"move32x32.png";
-const wchar_t *g_szTileSelFN = L"tilesel32x32.png";
+const wchar_t *g_szMoveFN32 = L"move32.png";
+const wchar_t *g_szMoveFN64 = L"move64.png";
+const wchar_t *g_szTileSelFN = L"tilesel.png";
 const int ALPHA_TILESEL = 150;
-const int WNDSEP_X = 224;
+const int WNDSEP_X = 320;
 const int WINDOW_W = 800;
 const int WINDOW_H = 600;
-const int TILE_W = 32;
-const int TILE_H = 32;
 
 JWWindow* g_myWND;
 HWND g_hWnd;
@@ -37,6 +36,7 @@ bool g_TileMouseRBDown;
 int g_nMouseXStart;
 int g_nMouseYStart;
 
+DX9MapEditor* myEditor;
 DX9BaseME* g_DX9Left;
 DX9BaseME* g_DX9Right;
 DX9Image* g_ImgTile;
@@ -74,11 +74,11 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 
 int main()
 {
-	DX9MapEditor myEditor;
-	myEditor.Create(WINDOW_W, WINDOW_H);
+	myEditor = new DX9MapEditor;
+	myEditor->Create(WINDOW_W, WINDOW_H);
 
 	g_myWND = new JWWindow;
-	g_hWnd = g_myWND->Create(g_Caption, 50, 50, WINDOW_W, WINDOW_H, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
+	g_hWnd = g_myWND->Create(g_szCaption, 50, 50, WINDOW_W, WINDOW_H, RGB(255, 255, 255), WndProc, WS_OVERLAPPEDWINDOW);
 	RECT tRect;
 	GetClientRect(g_hWnd, &tRect);
 	g_hChildL = g_myWND->AddChild(g_hWnd, L"ChL", 0, 0, WNDSEP_X, tRect.bottom, RGB(230, 230, 230), WndProcL);
@@ -100,6 +100,7 @@ int main()
 	g_ImgTileSel->Create(g_DX9Left->GetDevice());
 	g_ImgTileSel->SetTexture(g_szTileSelFN);
 	g_ImgTileSel->SetAlpha(ALPHA_TILESEL);
+	g_ImgTileSel->SetSize(myEditor->GetTileSize(), myEditor->GetTileSize());
 
 	g_DX9Right = new DX9BaseME;
 	g_DX9Right->CreateOnWindow(g_hChildR);
@@ -107,7 +108,7 @@ int main()
 
 	g_DX9Map = new DX9Map;
 	g_DX9Map->Create(g_DX9Right->GetDevice());
-	g_DX9Map->SetMoveTexture(g_szMoveFN);
+	g_DX9Map->SetMoveTexture(g_szMoveFN32);
 
 	g_ImgMapSel = new DX9Image;
 	g_ImgMapSel->Create(g_DX9Right->GetDevice());
@@ -167,16 +168,26 @@ void MainLoop()
 
 int LoadTile(std::wstring TileName)
 {
-	int tTW, tTH;
+	// Load tile texture
 	g_ImgTile->SetTexture(TileName);
-	g_ImgMapSel->SetTexture(TileName);
-	g_ImgMapSel->SetSize(0, 0);
-	g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
 
-	tTW = g_ImgTile->GetWidth();
-	tTH = g_ImgTile->GetHeight();
-	g_nTileCols = (int)(tTW / TILE_W);
-	g_nTileRows = (int)(tTH / TILE_H);
+	// Set tile selector size
+	g_ImgTileSel->SetSize(myEditor->GetTileSize(), myEditor->GetTileSize());
+
+	// Set tile columns and rows count
+	g_nTileCols = (int)(g_ImgTile->GetWidth() / myEditor->GetTileSize());
+	g_nTileRows = (int)(g_ImgTile->GetHeight() / myEditor->GetTileSize());
+	float u2 = 1.0f / (float)g_nTileCols;
+	float v2 = 1.0f / (float)g_nTileRows;
+
+	// Set tile selector position
+	TileSetter(0, 0);
+
+	// Set map selector
+	g_ImgMapSel->SetTexture(TileName);
+	g_ImgMapSel->SetSize(myEditor->GetTileSize(), myEditor->GetTileSize());
+	g_ImgMapSel->SetUVRange(0, u2, 0, v2);
+	g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
 
 	return 0;
 }
@@ -198,7 +209,17 @@ void SetToMoveMode()
 	if ((g_DX9Map->IsMapCreated()) && (g_nMode != DX9Common::MapMode::MoveMode))
 	{
 		g_nMode = DX9Common::MapMode::MoveMode;
-		LoadTile(g_szMoveFN);
+		switch (myEditor->GetTileSize())
+		{
+		case 32:
+			LoadTile(g_szMoveFN32);
+			g_DX9Map->SetMoveTexture(g_szMoveFN32);
+			break;
+		case 64:
+			LoadTile(g_szMoveFN64);
+			g_DX9Map->SetMoveTexture(g_szMoveFN64);
+			break;
+		}
 		g_DX9Map->SetMode(g_nMode);
 		AdjustScrollbars();
 		TileSetter(0, 0);
@@ -272,7 +293,7 @@ int UpdateWindowCaption(int MapCols, int MapRows)
 	std::wstring tStr;
 	wchar_t tWC[255] = { 0 };
 
-	tStr = g_Caption;
+	tStr = g_szCaption;
 	tStr += L" <맵 이름: ";
 	tStr += g_strMapName;
 	tStr += L"> <크기: ";
@@ -291,8 +312,8 @@ int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY)
 {
 	if (g_ImgTile->IsTextureLoaded())
 	{
-		int tTileX = (int)(MouseX / TILE_W);
-		int tTileY = (int)(MouseY / TILE_H);
+		int tTileX = (int)(MouseX / myEditor->GetTileSize());
+		int tTileY = (int)(MouseY / myEditor->GetTileSize());
 
 		int tCols = g_nTileCols;
 		int tRows = g_nTileRows;
@@ -300,13 +321,13 @@ int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY)
 		tTileX = min(tTileX, tCols - 1);
 		tTileY = min(tTileY, tRows - 1);
 
-		g_ImgTileSel->SetSize(TILE_W, TILE_H);
-		g_ImgTileSel->SetPosition(D3DXVECTOR2((float)(tTileX * TILE_W), (float)(tTileY * TILE_H)));
+		g_ImgTileSel->SetSize(myEditor->GetTileSize(), myEditor->GetTileSize());
+		g_ImgTileSel->SetPosition(D3DXVECTOR2((float)(tTileX * myEditor->GetTileSize()), (float)(tTileY * myEditor->GetTileSize())));
 
 		if ((RangeX > 1) || (RangeY > 1))
 		{
 			g_bMultiSel = true;
-			g_ImgTileSel->SetSize(TILE_W * RangeX, TILE_H * RangeY);
+			g_ImgTileSel->SetSize(myEditor->GetTileSize() * RangeX, myEditor->GetTileSize() * RangeY);
 		}
 
 		tTileX = tTileX + g_nLScrollXPos;
@@ -322,8 +343,8 @@ int TileSetter(int MouseX, int MouseY, int RangeX, int RangeY)
 		if (RangeX == 0) RangeX = 1;
 		if (RangeY == 0) RangeY = 1;
 
-		int sizeX = RangeX * TILE_W;
-		int sizeY = RangeY * TILE_H;
+		int sizeX = RangeX * myEditor->GetTileSize();
+		int sizeY = RangeY * myEditor->GetTileSize();
 		float u1 = (float)tTileX / (float)tCols;
 		float u2 = (float)(tTileX + RangeX) / (float)tCols;
 		float v1 = (float)tTileY / (float)tRows;
@@ -342,8 +363,8 @@ int MapSetter(int ID, int MouseX, int MouseY)
 {
 	if (g_ImgTile->IsTextureLoaded())
 	{
-		int tMapX = (int)(MouseX / TILE_W) + g_nRScrollXPos;
-		int tMapY = (int)(MouseY / TILE_H) + g_nRScrollYPos;
+		int tMapX = (int)(MouseX / myEditor->GetTileSize()) + g_nRScrollXPos;
+		int tMapY = (int)(MouseY / myEditor->GetTileSize()) + g_nRScrollYPos;
 
 		int NewID = ID;
 
@@ -416,12 +437,12 @@ int AdjustScrollbars()
 			// 타일
 			GetClientRect(g_hChildL, &tRect);
 
-			int nCurrTileMaxRows = (int)(tRect.bottom / TILE_H);
+			int nCurrTileMaxRows = (int)(tRect.bottom / myEditor->GetTileSize());
 			int nTileRestRows = g_nTileRows - nCurrTileMaxRows;
 			nTileRestRows = max(0, nTileRestRows);
 			g_myWND->SetScrollbar(g_hScrLV, 0, nTileRestRows, g_nTileRows);
 
-			int nCurrTileMaxCols = (int)(tRect.right / TILE_W);
+			int nCurrTileMaxCols = (int)(tRect.right / myEditor->GetTileSize()) - 1;
 			int nTileRestCols = g_nTileCols - nCurrTileMaxCols;
 			nTileRestCols = max(0, nTileRestCols);
 			g_myWND->SetScrollbar(g_hScrLH, 0, nTileRestCols, g_nTileCols);
@@ -429,13 +450,13 @@ int AdjustScrollbars()
 			// 맵
 			GetClientRect(g_hChildR, &tRect);
 
-			int nCurrMapMaxRows = (int)(tRect.bottom / TILE_H);
+			int nCurrMapMaxRows = (int)(tRect.bottom / myEditor->GetTileSize()) - 1;
 			int nMapRows = g_DX9Map->GetMapRows();
 			int nMapRestRows = nMapRows - nCurrMapMaxRows;
 			nMapRestRows = max(0, nMapRestRows);
 			g_myWND->SetScrollbar(g_hScrRV, 0, nMapRestRows, nMapRows);
 
-			int nCurrMapMaxCols = (int)(tRect.right / TILE_W);
+			int nCurrMapMaxCols = (int)(tRect.right / myEditor->GetTileSize()) - 1;
 			int nMapCols = g_DX9Map->GetMapCols();
 			int nMapRestCols = nMapCols - nCurrMapMaxCols;
 			nMapRestCols = max(0, nMapRestCols);
@@ -459,12 +480,12 @@ int OnScrollbarChanged()
 	{
 		if (g_ImgTile->IsTextureLoaded())
 		{
-			tOffset.x = (float)(-g_nLScrollXPos * TILE_W);
-			tOffset.y = (float)(-g_nLScrollYPos * TILE_H);
+			tOffset.x = (float)(-g_nLScrollXPos * myEditor->GetTileSize());
+			tOffset.y = (float)(-g_nLScrollYPos * myEditor->GetTileSize());
 			g_ImgTile->SetPosition(tOffset);
 
-			tOffset.x = (float)((g_nCurrTileX - g_nLScrollXPos) * TILE_W);
-			tOffset.y = (float)((g_nCurrTileY - g_nLScrollYPos) * TILE_H);
+			tOffset.x = (float)((g_nCurrTileX - g_nLScrollXPos) * myEditor->GetTileSize());
+			tOffset.y = (float)((g_nCurrTileY - g_nLScrollYPos) * myEditor->GetTileSize());
 			g_ImgTileSel->SetPosition(tOffset);
 
 			g_nRScrollXPos = GetScrollPos(g_hScrRH, SB_CTL);
@@ -474,8 +495,8 @@ int OnScrollbarChanged()
 			{
 				if (g_DX9Map->IsMapCreated())
 				{
-					tOffset.x = (float)(-g_nRScrollXPos * TILE_W);
-					tOffset.y = (float)(-g_nRScrollYPos * TILE_H);
+					tOffset.x = (float)(-g_nRScrollXPos * myEditor->GetTileSize());
+					tOffset.y = (float)(-g_nRScrollYPos * myEditor->GetTileSize());
 					g_DX9Map->SetPosition(tOffset);
 					g_ImgMapBG->SetPosition(tOffset);
 				}
@@ -483,7 +504,6 @@ int OnScrollbarChanged()
 		}
 	}
 	
-
 	return 0;
 }
 
@@ -565,8 +585,8 @@ LRESULT CALLBACK WndProcL(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 				if (g_TileMouseLBDown)
 				{
 					// 타일 다중 선택
-					g_nMSRangeX = (int)((tMouseX - g_nMouseXStart) / TILE_W) + 1;
-					g_nMSRangeY = (int)((tMouseY - g_nMouseYStart) / TILE_H) + 1;
+					g_nMSRangeX = (int)((tMouseX - g_nMouseXStart) / myEditor->GetTileSize()) + 1;
+					g_nMSRangeY = (int)((tMouseY - g_nMouseYStart) / myEditor->GetTileSize()) + 1;
 
 					TileSetter(g_nMouseXStart, g_nMouseYStart, g_nMSRangeX, g_nMSRangeY);
 				}
@@ -629,8 +649,8 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 		{
 			g_ImgMapSel->SetAlpha(ALPHA_TILESEL);
 			D3DXVECTOR2 tMapSel;
-			tMapSel.x = (float)((tMouseX / TILE_W) * TILE_W);
-			tMapSel.y = (float)((tMouseY / TILE_H) * TILE_H);
+			tMapSel.x = (float)((tMouseX / myEditor->GetTileSize()) * myEditor->GetTileSize());
+			tMapSel.y = (float)((tMouseY / myEditor->GetTileSize()) * myEditor->GetTileSize());
 			g_ImgMapSel->SetPosition(tMapSel);
 		}
 		break;
@@ -641,14 +661,29 @@ LRESULT CALLBACK WndProcR(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM lParam)
 {
 	wchar_t tWC[255] = { 0 };
-	std::wstring tStr;
+	WSTRING tStr;
 	size_t tFind;
 	int tMapCols = 0;
 	int tMapRows = 0;
+	int tTileSize = 0;
+
+	WSTRING Ratio[4] = { L"x32", L"x64" };
+	HWND tempHWND;
 
 	switch (iMessage)
 	{
 	case WM_INITDIALOG:
+		tempHWND = (HWND)GetDlgItem(hDlg, IDC_COMBO1);
+
+		for (int i = 0; i < 4; i ++)
+		{
+			// Send a CB_ADDSTRING message to load each item (Add string to combobox.)
+			SendMessage(tempHWND, CB_ADDSTRING, (WPARAM)0, (LPARAM)Ratio[i].c_str());
+		}
+
+		// Send the CB_SETCURSEL message to display an initial item in the selection field
+		SendMessage(tempHWND, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+
 		PostMessage(hDlg, WM_NEXTDLGCTL, (WPARAM)GetDlgItem(hDlg, IDC_EDIT1), TRUE);
 		return TRUE;
 	case WM_COMMAND:
@@ -665,6 +700,9 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 				SetWindowText(GetDlgItem(hDlg, IDC_EDIT4), g_strTileName.c_str());
 			}
 			break;
+		case IDC_COMBO1:
+
+			break;
 		case IDOK:
 			GetDlgItemText(hDlg, IDC_EDIT4, tWC, 255);
 			tFind = wcslen(tWC);
@@ -677,14 +715,29 @@ LRESULT CALLBACK DlgProcNewMap(HWND hDlg, UINT iMessage, WPARAM wParam, LPARAM l
 				tMapCols = GetDlgItemInt(hDlg, IDC_EDIT2, FALSE, FALSE);
 				tMapRows = GetDlgItemInt(hDlg, IDC_EDIT3, FALSE, FALSE);
 
+				GetDlgItemText(hDlg, IDC_COMBO1, tWC, 255);
+				tStr = tWC;
+				tStr = tStr.substr(1);
+				tTileSize = _wtoi(tStr.c_str());
+				myEditor->SetTileSize(tTileSize);
+				
 				if (tMapCols && tMapRows)
 				{
 					// 타일 불러오기
 					LoadTile(g_strTileName);
 					g_DX9Map->SetTileTexture(g_strTileName);
+					switch (tTileSize)
+					{
+					case 32:
+						g_DX9Map->SetMoveTexture(g_szMoveFN32);
+						break;
+					case 64:
+						g_DX9Map->SetMoveTexture(g_szMoveFN64);
+						break;
+					}
 
 					// 맵 만들기
-					g_DX9Map->CreateNewMap(tWC, tMapCols, tMapRows);
+					g_DX9Map->CreateNewMap(tWC, tMapCols, tMapRows, tTileSize);
 
 					g_ImgMapBG->SetSize(g_DX9Map->GetWidth(), g_DX9Map->GetHeight());
 					UpdateWindowCaption(tMapCols, tMapRows);

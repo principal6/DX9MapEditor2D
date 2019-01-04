@@ -27,12 +27,12 @@ private:
 	static const int MAX_LINE_LEN;
 	static const int MAX_TILEID_LEN;
 	static const int MAX_MOVEID_LEN;
-	static const int TILE_W;
-	static const int TILE_H;
 	static const int MOVE_ALPHA;
+	static const int TILE_NULL;
 
 	MapMode m_CurrMapMode; // For Map Editor
 	bool m_bMapCreated;
+	int m_TileSize;
 	int m_MapCols;
 	int m_MapRows;
 	int	m_TileSheetWidth;
@@ -78,7 +78,7 @@ public:
 	ReturnValue DX9Map::Create(LPDIRECT3DDEVICE9 pDevice);
 	void DX9Map::Destroy() override;
 	
-	void DX9Map::CreateNewMap(WSTRING Name, int MapCols, int MapRows);
+	void DX9Map::CreateNewMap(WSTRING Name, int MapCols, int MapRows, int TileSize);
 	void DX9Map::SetTileTexture(WSTRING FileName);
 	void DX9Map::SetMoveTexture(WSTRING FileName);
 	void DX9Map::LoadMapFromFile(WSTRING FileName);
@@ -87,7 +87,7 @@ public:
 	void DX9Map::Draw() override;
 
 	void DX9Map::SetMode(MapMode Mode);
-	void DX9Map::SetPosition(D3DXVECTOR2 Offset);
+	void DX9Map::SetPosition(D3DXVECTOR2 Offset) override;
 	void DX9Map::SetMapFragmentTile(int TileID, int X, int Y);
 	void DX9Map::SetMapFragmentMove(int MoveID, int X, int Y);
 	void DX9Map::SetGlobalPosition(D3DXVECTOR2 Offset); // For map movement

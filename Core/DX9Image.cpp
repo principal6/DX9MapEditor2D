@@ -79,10 +79,13 @@ void DX9Image::CreateVertexBuffer()
 		m_Vertices.push_back(VertexImage(m_Position.x + m_Width, m_Position.y + m_Height, 0.0f, 1.0f, 0xffffffff, 1.0f, 1.0f));
 	}
 
-	int rVertSize = sizeof(VertexImage) * static_cast<int>(m_Vertices.size());
-	if (FAILED(m_pDevice->CreateVertexBuffer(rVertSize, 0, D3DFVF_TEXTURE, D3DPOOL_MANAGED, &m_pVertexBuffer, nullptr)))
+	if (m_pVertexBuffer == nullptr)
 	{
-		return;
+		int rVertSize = sizeof(VertexImage) * static_cast<int>(m_Vertices.size());
+		if (FAILED(m_pDevice->CreateVertexBuffer(rVertSize, 0, D3DFVF_TEXTURE, D3DPOOL_MANAGED, &m_pVertexBuffer, nullptr)))
+		{
+			return;
+		}
 	}
 }
 
@@ -94,10 +97,13 @@ void DX9Image::CreateIndexBuffer()
 		m_Indices.push_back(Index3(0, 3, 2));
 	}
 
-	int rIndSize = sizeof(Index3) * static_cast<int>(m_Indices.size());
-	if (FAILED(m_pDevice->CreateIndexBuffer(rIndSize, 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_pIndexBuffer, nullptr)))
+	if (m_pIndexBuffer == nullptr)
 	{
-		return;
+		int rIndSize = sizeof(Index3) * static_cast<int>(m_Indices.size());
+		if (FAILED(m_pDevice->CreateIndexBuffer(rIndSize, 0, D3DFMT_INDEX16, D3DPOOL_MANAGED, &m_pIndexBuffer, nullptr)))
+		{
+			return;
+		}
 	}
 }
 
@@ -137,7 +143,7 @@ void DX9Image::Draw()
 	m_pDevice->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 	m_pDevice->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
 	m_pDevice->SetRenderState(D3DRS_BLENDOP, D3DBLENDOP_ADD);
-	
+
 	if (m_pTexture)
 	{
 		m_pDevice->SetTexture(0, m_pTexture);
@@ -300,6 +306,8 @@ void DX9Image::UpdateVertexData()
 		tW = m_VisibleWidth;
 	if (m_VisibleHeight != -1)
 		tH = m_VisibleHeight;
+
+
 
 	m_Vertices[0].x = m_Position.x;
 	m_Vertices[0].y = m_Position.y;

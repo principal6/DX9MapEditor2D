@@ -112,6 +112,7 @@ protected:
 
 	static const int MAX_UNIT_COUNT = 100;
 	static const int NUM_KEYS = 256;
+	static const int DEF_TILE_SIZE = 32;
 	static const float UV_OFFSET;
 	static const wchar_t ASSET_DIR[];
 
